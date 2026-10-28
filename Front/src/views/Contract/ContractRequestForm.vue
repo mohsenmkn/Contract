@@ -302,6 +302,16 @@
             />
           </template>
         </Column>
+        <Column header="کد آیتم" style="width: 140px">
+          <template #body="slotProps">
+            <InputText
+                v-model="slotProps.data.item_code"
+                class="w-full"
+                placeholder="کد آیتم"
+                dir="ltr"
+            />
+          </template>
+        </Column>
         <Column header="واحد" style="width: 120px">
           <template #body="slotProps">
             <InputText
@@ -481,12 +491,7 @@ const steps = [
 ]
 
 const typeOptions = [
-  { label: 'خرید کالا', value: 'purchase' },
-  { label: 'خدمات', value: 'service' },
-  { label: 'پیمانکاری', value: 'contracting' },
-  { label: 'مشاوره', value: 'consulting' },
-  { label: 'اجاره', value: 'rental' },
-  { label: 'سایر', value: 'other' },
+  { label: 'پیمانکار', value: 'downstream' },
 ]
 
 const form = ref({
@@ -582,6 +587,7 @@ const selectParty = (party) => {
 const addItem = () => {
   form.value.items.push({
     description: '',
+    item_code: '',
     unit: '',
     quantity: 0,
     unit_price: 0,

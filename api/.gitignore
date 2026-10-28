@@ -19,5 +19,3 @@ yarn-error.log
 /current
 /releases
 /shared
-config/cors.php
-config/database.php

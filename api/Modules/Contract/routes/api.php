@@ -9,7 +9,16 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::get('contracts/{contract}', [ContractController::class, 'show']);
     Route::put('contracts/{contract}', [ContractController::class, 'update']);
     Route::delete('contracts/{contract}', [ContractController::class, 'destroy']);
-    Route::post('contracts/{contract}/submit', [ContractController::class, 'submit']);
+    //Route::post('contracts/{contract}/submit', [ContractController::class, 'submit']);
 
     Route::post('contracts/{id}/send-to-contractor', [ContractController::class, 'sendToContractor']);
+
+    // Workflow Routes
+    Route::post('contracts/{id}/submit-to-legal', [ContractController::class, 'submitToLegal']);
+    Route::post('contracts/{id}/legal-draft', [ContractController::class, 'legalDraft']);
+    Route::post('contracts/{id}/send-to-contractor', [ContractController::class, 'sendToContractor']);
+    //Route::post('contracts/{id}/mark-contractor-signed', [ContractController::class, 'markContractorSigned']);
+    //Route::post('contracts/{id}/executive-sign', [ContractController::class, 'executiveSign']);
+    Route::post('contracts/{id}/notify', [ContractController::class, 'notify']);
+    Route::get('contracts/{id}/workflow-history', [ContractController::class, 'workflowHistory']);
 });

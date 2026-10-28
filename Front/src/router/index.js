@@ -308,7 +308,6 @@ const router = createRouter({
             parent: 'signatures.index'
           }
         },
-        // واحدهای سازمانی
         {
           path: 'units',
           name: 'units.index',
@@ -326,6 +325,35 @@ const router = createRouter({
             title: 'ایجاد واحد',
             permission: 'units.create',
             parent: 'units.index'
+          }
+        },
+        {
+          path: 'contract-requests',
+          name: 'contract.requests',
+          component: () => import('@/views/Contract/ContractRequestsList.vue'),
+          meta: {
+            title: 'درخواست‌های قرارداد',
+            permission: 'contracts.read'
+          }
+        },
+        {
+          path: 'contract-requests/create',
+          name: 'contract.requests.create',
+          component: () => import('@/views/Contract/ContractRequestForm.vue'),
+          meta: {
+            title: 'درخواست قرارداد جدید',
+            permission: 'contracts.create',
+            parent: 'contract.requests'
+          }
+        },
+        {
+          path: 'contract-requests/:id/edit',
+          name: 'contract.requests.edit',
+          component: () => import('@/views/Contract/ContractRequestForm.vue'),
+          meta: {
+            title: 'ویرایش درخواست',
+            permission: 'contracts.update',
+            parent: 'contract.requests'
           }
         },
 

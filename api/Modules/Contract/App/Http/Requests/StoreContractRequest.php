@@ -38,9 +38,10 @@ class StoreContractRequest extends FormRequest
             'subject.required' => 'موضوع قرارداد الزامی است.',
             'party_id.required' => 'طرف قرارداد الزامی است.',
             'party_id.exists' => 'طرف قرارداد نامعتبر است.',
-            'type.in' => 'نوع قرارداد باید upstream یا downstream باشد.',
+            'type.in' => 'نوع قرارداد باید کارفرمایی یا پیمانکاری باشد.',
             'end_date.after' => 'تاریخ پایان باید بعد از تاریخ شروع باشد.',
             'amount.min' => 'مبلغ قرارداد نمی‌تواند منفی باشد.',
+            'items.*.item_code' => 'کد ایتم الزامیست',
         ];
     }
 }

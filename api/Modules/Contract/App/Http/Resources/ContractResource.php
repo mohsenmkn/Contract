@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Alert\App\Http\Resources\AlertResource;
 use Modules\Amendment\App\Http\Resources\AmendmentResource;
+use Modules\Contract\App\Models\Contract;
 use Modules\Guarantee\App\Http\Resources\GuaranteeResource;
 use Modules\Invoice\App\Http\Resources\InvoiceResource;
 use Modules\Party\App\Http\Resources\PartyResource;
@@ -30,12 +31,12 @@ class ContractResource extends JsonResource
             'currency' => $this->currency,
             'description' => $this->description,
 
-            // ✅ فیلدهای جدید متن قرارداد
             'content' => $this->content,
-            'pages_count' => $this->pages_count,
-            'content_version' => $this->content_version,
-            'has_content' => $this->hasContent(),
-            'content_summary' => $this->getContentSummary(200),
+            'pages_count' => $this->pages_count ?? $this->calculatePagesCount(),
+            'content_version' => $this->content_version ?? '1.0',
+            'has_content' => $this->resource->hasContent(), // فراخوانی از مدل
+            'content_summary' => $this->resource->getContentSummary(200), // فراخوانی از مدل
+
 
             'party' => new PartyResource($this->whenLoaded('party')),
             'creator' => new UserResource($this->whenLoaded('creator')),
@@ -52,6 +53,19 @@ class ContractResource extends JsonResource
             'days_remaining' => $this->end_date?->diffInDays(now(), false),
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
+
+
+            'status_color' => $this->status_color,
+            'status_icon' => $this->status_icon,
+            'unit' => new \Modules\Organization\App\Http\Resources\UnitResource($this->whenLoaded('unit')),
+            'requesting_user' => new UserResource($this->whenLoaded('requestingUser')),
+            'parent_contract' => new self($this->whenLoaded('parentContract')),
+            'approved_by' => new UserResource($this->whenLoaded('approver')),
+            'notified_at' => $this->notified_at?->format('Y-m-d H:i:s'),
+            'can_transition_to' => $this->getAvailableTransitions(),
+
+
+
         ];
     }
 
@@ -67,5 +81,14 @@ class ContractResource extends JsonResource
             'terminated' => 'فسخ شده',
             default => $this->status,
         };
+    }
+
+    private function getAvailableTransitions(): array
+    {
+        $allowed = Contract::TRANSITIONS[$this->status] ?? [];
+        return array_map(fn($s) => [
+            'status' => $s,
+            'label' => Contract::STATUSES[$s] ?? $s,
+        ], $allowed);
     }
 }
