@@ -439,3 +439,246 @@ const handleReturnToRequester = async () => {
 .info-label {
   font-size: 0.75rem;
   color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.info-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Info Banner */
+.info-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 1px solid #fbbf24;
+  border-radius: 12px;
+}
+
+.info-banner-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f59e0b;
+  color: white;
+  border-radius: 10px;
+}
+
+.info-banner-icon.warn {
+  background: #f59e0b;
+}
+
+.info-banner-content {
+  flex: 1;
+}
+
+.info-banner-title {
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 0.95rem;
+}
+
+.info-banner-subtitle {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 0.15rem;
+}
+
+/* Form */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.label-icon {
+  width: 16px;
+  height: 16px;
+  color: #3b82f6;
+}
+
+.form-input {
+  width: 100%;
+}
+
+/* Actions */
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.action-btn {
+  width: 100%;
+  min-height: 48px;
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: none;
+}
+
+/* Contract Content */
+.contract-content {
+  line-height: 2;
+  font-size: 14px;
+}
+
+.contract-content :deep(h1),
+.contract-content :deep(h2),
+.contract-content :deep(h3) {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.contract-content :deep(p) {
+  margin-bottom: 1rem;
+  text-align: justify;
+  line-height: 2;
+}
+
+.contract-content :deep(ul),
+.contract-content :deep(ol) {
+  margin-bottom: 1rem;
+  padding-right: 2rem;
+}
+
+.contract-content :deep(li) {
+  margin-bottom: 0.5rem;
+}
+
+/* Timeline */
+.timeline {
+  position: relative;
+  padding-right: 20px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  right: 7px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #e2e8f0;
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 1.5rem;
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-dot {
+  position: absolute;
+  right: -20px;
+  top: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 0 0 2px currentColor;
+}
+
+.timeline-dot.blue {
+  background: #3b82f6;
+  color: #3b82f6;
+}
+
+.timeline-dot.green {
+  background: #10b981;
+  color: #10b981;
+}
+
+.timeline-dot.orange {
+  background: #f59e0b;
+  color: #f59e0b;
+}
+
+.timeline-dot.red {
+  background: #ef4444;
+  color: #ef4444;
+}
+
+.timeline-content {
+  padding-right: 1rem;
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.timeline-title {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #1e293b;
+}
+
+.timeline-date {
+  font-size: 0.75rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.timeline-actor {
+  font-size: 0.75rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.timeline-comments {
+  font-size: 0.8rem;
+  color: #475569;
+  background: #f8fafc;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border-right: 3px solid #3b82f6;
+  margin-top: 0.5rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #94a3b8;
+}
+
+@media (max-width: 768px) {
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+  .actions-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
