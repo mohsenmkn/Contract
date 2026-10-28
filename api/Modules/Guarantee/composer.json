@@ -1,0 +1,31 @@
+{
+    "name": "nwidart/guarantee",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Guarantee\\": "",
+            "Modules\\Guarantee\\App\\": "app/",
+            "Modules\\Guarantee\\Database\\Factories\\": "database/factories/",
+            "Modules\\Guarantee\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Guarantee\\Tests\\": "tests/"
+        }
+    }
+}

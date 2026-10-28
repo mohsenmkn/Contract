@@ -1,0 +1,11 @@
+{
+    "name": "Guarantee",
+    "alias": "guarantee",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Guarantee\\App\\Providers\\GuaranteeServiceProvider"
+    ],
+    "files": []
+}

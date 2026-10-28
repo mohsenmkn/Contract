@@ -1,0 +1,31 @@
+{
+    "name": "nwidart/amendment",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Amendment\\": "",
+            "Modules\\Amendment\\App\\": "app/",
+            "Modules\\Amendment\\Database\\Factories\\": "database/factories/",
+            "Modules\\Amendment\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Amendment\\Tests\\": "tests/"
+        }
+    }
+}

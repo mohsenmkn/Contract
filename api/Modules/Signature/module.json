@@ -1,0 +1,11 @@
+{
+    "name": "Signature",
+    "alias": "signature",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Signature\\App\\Providers\\SignatureServiceProvider"
+    ],
+    "files": []
+}

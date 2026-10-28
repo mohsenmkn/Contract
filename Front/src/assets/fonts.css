@@ -1,0 +1,26 @@
+@font-face {
+    font-family: 'CustomFont'; /* نام دلخواه */
+    src: url('./fonts/Vazirmatn-Regular.woff2') format('woff2'),
+    url('./fonts/Vazirmatn-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'CustomFont';
+    src: url('./fonts/Vazirmatn-Bold.woff2') format('woff2'),
+    url('./fonts/Vazirmatn-Bold.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* اعمال روی کل پروژه یا کلاس‌های خاص */
+body {
+    font-family: 'CustomFont', Tahoma, Arial, sans-serif;
+}
+
+.custom-font {
+    font-family: 'CustomFont', Tahoma, Arial, sans-serif;
+}

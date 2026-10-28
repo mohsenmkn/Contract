@@ -1,0 +1,11 @@
+{
+    "name": "Amendment",
+    "alias": "amendment",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Amendment\\App\\Providers\\AmendmentServiceProvider"
+    ],
+    "files": []
+}

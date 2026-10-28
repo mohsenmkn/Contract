@@ -1,0 +1,16 @@
+{
+    "Auth": true,
+    "User": true,
+    "Acl": true,
+    "Party": true,
+    "Contract": true,
+    "Amendment": true,
+    "Guarantee": true,
+    "Invoice": true,
+    "Payment": true,
+    "Signature": true,
+    "Alert": true,
+    "Document": true,
+    "Dashboard": true,
+    "Organization": true
+}
