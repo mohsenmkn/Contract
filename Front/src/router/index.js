@@ -10,18 +10,25 @@ import ForbiddenPage from '@/views/ForbiddenPage.vue';
 import RoleList from '@/views/User/RoleList.vue';
 import GroupsView from '@/views/Acl/GroupsView.vue';
 
+const unitContractRoles = ['unit_contract_staff', 'unit_head', 'unit_manager', 'unit_deputy', 'unit_representative'];
+
+const contractCreateComponent = () => {
+  const auth = useAuthStore();
+  return  import('@/components/contract/ContractRequestForm.vue');
+};
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  scrollBehavior(to) {
+    if (to.hash) return { el: to.hash, behavior: 'smooth' }
+    return { top: 0 }
+  },
   routes: [
     {
       path: '/',
       redirect: (to) => {
         const auth = useAuthStore()
-        // ✅ هدایت هوشمند بر اساس نقش
-        if (auth.isContractor) {
-          return { name: 'contractor.portal' }
-        }
-        return { name: 'Dashboard' }
+        return { name: auth.defaultDashboard }
       }
     },
     {
@@ -51,7 +58,7 @@ const router = createRouter({
           meta: {
             title: 'داشبورد مدیریتی',
             requiresAuth: true,
-            roles: ['super_admin', 'contract_manager', 'financial_expert', 'legal_expert']
+            roles: ['super-admin', 'contract_manager', 'financial_expert', 'legal_expert']
           }
         },
 
@@ -69,6 +76,27 @@ const router = createRouter({
           }
         },
 
+        {
+          path: '/executive-dashboard',
+          name: 'executive.dashboard',
+          component: () => import('@/views/Dashboard/ExecutiveDashboard.vue'),
+          meta: {
+            title: 'داشبورد امضاهای مدیریتی',
+            requiresAuth: true,
+            roles: ['ceo', 'board_member', 'deputy_ceo']
+          }
+        },
+        {
+          path: '/unit-dashboard',
+          name: 'unit.dashboard',
+          component: () => import('@/views/Dashboard/UnitDashboard.vue'),
+          meta: {
+            title: 'داشبورد واحد',
+            requiresAuth: true,
+            roles: ['unit_contract_staff', 'unit_head', 'unit_manager', 'unit_deputy', 'unit_representative','کاربران واحد'],
+          }
+        },
+
         // ═══════════════════════════════════════════════
         // داشبورد قراردادها (برای مدیران)
         // ═══════════════════════════════════════════════
@@ -79,7 +107,7 @@ const router = createRouter({
           meta: {
             title: 'داشبورد قراردادها',
             permission: 'dashboard.view',
-            roles: ['super_admin', 'contract_manager', 'financial_expert']
+            roles: ['super-admin', 'contract_manager', 'financial_expert']
           }
         },
 
@@ -176,7 +204,7 @@ const router = createRouter({
         {
           path: 'contracts/create',
           name: 'contracts.create',
-          component: () => import('@/views/Contract/ContractCreate.vue'),
+          component: contractCreateComponent,
           meta: {
             title: 'ایجاد قرارداد',
             permission: 'contracts.create',
@@ -196,7 +224,7 @@ const router = createRouter({
         {
           path: 'contracts/:id/edit',
           name: 'contracts.edit',
-          component: () => import('@/views/Contract/ContractCreate.vue'),
+          component: () => import('@/components/contract/ContractRequestForm.vue'),
           meta: {
             title: 'ویرایش قرارداد',
             permission: 'contracts.update',
@@ -271,6 +299,16 @@ const router = createRouter({
           }
         },
         {
+          path: 'guarantees/:id',
+          name: 'guarantees.show',
+          component: () => import('@/views/Guarantee/GuaranteeShow.vue'),
+          meta: {
+            title: 'جزئیات ضمانت‌نامه',
+            permission: 'guarantees.read',
+            parent: 'guarantees.index'
+          }
+        },
+        {
           path: 'guarantees',
           name: 'guarantees.index',
           component: () => import('@/views/Guarantee/GuaranteesList.vue'),
@@ -280,12 +318,21 @@ const router = createRouter({
           }
         },
         {
+          path: 'guarantee-desk',
+          name: 'guarantee.desk',
+          component: () => import('@/views/Guarantee/GuaranteeDesk.vue'),
+          meta: {
+            title: 'میز دریافت ضمانت',
+            permission: 'guarantees.manage'
+          }
+        },
+        {
           path: 'contracts/:contractId/guarantees/create',
           name: 'guarantees.create',
           component: () => import('@/views/Guarantee/GuaranteeCreate.vue'),
           meta: {
             title: 'ثبت ضمانت‌نامه',
-            permission: 'guarantees.create',
+            permission: 'guarantees.manage',
             parent: 'contracts.show'
           }
         },
@@ -296,6 +343,15 @@ const router = createRouter({
           meta: {
             title: 'امضاهای در انتظار',
             permission: 'signatures.read'
+          }
+        },
+        {
+          path: 'signature-assets',
+          name: 'signatures.assets',
+          component: () => import('@/views/Signature/SignatureAssets.vue'),
+          meta: {
+            title: 'مدیریت امضای کاربران',
+            roles: ['super-admin']
           }
         },
         {
@@ -318,6 +374,24 @@ const router = createRouter({
           }
         },
         {
+          path: 'contract-system-settings',
+          name: 'contract.system-settings',
+          component: () => import('@/views/Contract/ContractSystemSettings.vue'),
+          meta: {
+            title: 'تنظیمات سامانه قراردادها',
+            roles: ['super-admin']
+          }
+        },
+        {
+          path: 'contract-settings',
+          name: 'contract.settings',
+          component: () => import('@/views/Contract/ContractSettings.vue'),
+          meta: {
+            title: 'تنظیمات گردش‌کار قرارداد',
+            permission: 'contract-settings.manage'
+          }
+        },
+        {
           path: 'units/create',
           name: 'units.create',
           component: () => import('@/views/Organization/UnitForm.vue'),
@@ -329,32 +403,15 @@ const router = createRouter({
         },
         {
           path: 'contract-requests',
-          name: 'contract.requests',
-          component: () => import('@/views/Contract/ContractRequestsList.vue'),
-          meta: {
-            title: 'درخواست‌های قرارداد',
-            permission: 'contracts.read'
-          }
+          redirect: { name: 'contracts.index' }
         },
         {
           path: 'contract-requests/create',
-          name: 'contract.requests.create',
-          component: () => import('@/views/Contract/ContractRequestForm.vue'),
-          meta: {
-            title: 'درخواست قرارداد جدید',
-            permission: 'contracts.create',
-            parent: 'contract.requests'
-          }
+          redirect: { name: 'contracts.create' }
         },
         {
           path: 'contract-requests/:id/edit',
-          name: 'contract.requests.edit',
-          component: () => import('@/views/Contract/ContractRequestForm.vue'),
-          meta: {
-            title: 'ویرایش درخواست',
-            permission: 'contracts.update',
-            parent: 'contract.requests'
-          }
+          redirect: to => ({ name: 'contracts.edit', params: { id: to.params.id } })
         },
 
         // 403
@@ -384,6 +441,12 @@ router.beforeEach(async (to) => {
   // ✅ اطمینان از لود شدن auth
   if (!auth.loaded) {
     await auth.initAuth();
+  }
+
+  // The root redirect can run before persisted auth finishes loading. Correct
+  // its fallback destination once the user's role is known.
+  if (auth.token && to.redirectedFrom?.path === '/' && to.name !== auth.defaultDashboard) {
+    return { name: auth.defaultDashboard };
   }
 
   // ✅ اگر کاربر لاگین کرده و به صفحه مهمان می‌رود

@@ -3,6 +3,7 @@
 namespace Modules\Contract\App\Notifications;
 use Modules\Contract\App\Events\ContractStatusChanged;
 use Modules\Contract\App\Models\Contract;
+use Modules\Contract\App\Models\ContractStatusHistory;
 use Illuminate\Support\Facades\Log;
 
 class SendWorkflowNotification
@@ -26,16 +27,29 @@ class SendWorkflowNotification
                 }
                 break;
 
+            case 'rejected_by_legal':
+                $requester = $contract->requestingUser;
+                if ($requester) {
+                    $comments = ContractStatusHistory::query()
+                        ->where('contract_id', $contract->id)
+                        ->where('to_status', 'rejected_by_legal')
+                        ->latest('id')
+                        ->value('comments');
+                    $requester->notify(new ContractRejectedByLegalNotification($contract, $comments));
+                }
+                break;
+
             case 'pending_contractor_sign':
                 // اعلان به پیمانکار (ایجاد رکورد در جدول Signatures توسط سرویس SendToContractor انجام می‌شود، اینجا فقط نوتیفیکیشن)
                 Log::info("Notification sent to contractor for contract {$contract->id}");
                 break;
 
             case 'pending_executive_sign':
-                // اعلان به مدیرعامل، معاون و اعضای هیئت مدیره
+                // مدیرعامل همیشه امضا می‌کند؛ عضو هیئت‌مدیره فقط در صورت نیاز قرارداد.
                 $this->notifyRole('ceo', "قرارداد {$contract->contract_number} جهت امضا ارسال شد.");
-                $this->notifyRole('deputy_ceo', "قرارداد {$contract->contract_number} جهت امضا ارسال شد.");
-                $this->notifyRole('board_member', "قرارداد {$contract->contract_number} جهت امضا ارسال شد.");
+                if ($contract->requires_board_signature) {
+                    $this->notifyRole('board_member', "قرارداد {$contract->contract_number} جهت امضا ارسال شد.");
+                }
                 break;
 
             case 'pending_notification':

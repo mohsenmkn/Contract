@@ -21,7 +21,7 @@ class GroupController extends Controller
     public function index(Request $request): JsonResponse
     {
         $groups = Group::withCount(['roles', 'users'])
-            ->with('roles:id,name')
+            ->with('roles:id,name,display_name')
             ->orderBy('sort_order')
             ->orderBy('title')
             ->get()
@@ -39,6 +39,7 @@ class GroupController extends Controller
                 'roles'             => $g->roles->map(fn ($r) => [
                     'id'   => $r->id,
                     'name' => $r->name,
+                    'display_name' => $r->display_name ?: $r->name,
                 ])->values(),
             ]);
 
@@ -63,7 +64,7 @@ class GroupController extends Controller
      */
     public function show(Group $group): JsonResponse
     {
-        $group->load(['roles:id,name', 'users:id,name,mobile,personnel_code']);
+        $group->load(['roles:id,name,display_name', 'users:id,name,mobile,personnel_code']);
 
         return response()->json([
             'data' => [
@@ -77,6 +78,7 @@ class GroupController extends Controller
                 'roles'             => $group->roles->map(fn ($r) => [
                     'id'   => $r->id,
                     'name' => $r->name,
+                    'display_name' => $r->display_name ?: $r->name,
                 ])->values(),
                 'users'             => $group->users->map(fn ($u) => [
                     'id'             => $u->id,
@@ -112,7 +114,7 @@ class GroupController extends Controller
 
         return response()->json([
             'message' => 'گروه با موفقیت ایجاد شد',
-            'data'    => $group->load('roles:id,name'),
+            'data'    => $group->load('roles:id,name,display_name'),
         ], 201);
     }
 
@@ -149,7 +151,7 @@ class GroupController extends Controller
 
         return response()->json([
             'message' => 'گروه با موفقیت ویرایش شد',
-            'data'    => $group->fresh()->load('roles:id,name'),
+            'data'    => $group->fresh()->load('roles:id,name,display_name'),
         ]);
     }
 

@@ -14,11 +14,23 @@ class ListContractsService
         // اگر کاربر پیمانکار است، فقط قراردادهای خودش را ببیند
         if ($user->isContractor()) {
             $query = $user->getAccessibleContracts();
+        } elseif ($user->hasAnyRole(['super-admin', 'contract_manager', 'legal_expert'])) {
+            $query = Contract::query();
+        } elseif ($user->hasAnyRole(['unit_contract_staff', 'unit_head', 'unit_manager', 'unit_deputy'])) {
+            $unitId = \Illuminate\Support\Facades\DB::table('contract_unit_signers')
+                ->where('user_id', $user->id)
+                ->value('unit_id') ?? $user->getUnit()?->id;
+
+            $query = Contract::where('unit_id', $unitId ?? 0);
+        } elseif ($user->isUnitRepresentative()) {
+            $query = Contract::where('unit_id', $user->getUnit()->id);
         } else {
             $query = Contract::query();
         }
 
-        $query->with(['party', 'creator']);
+        $query->with(['party', 'creator'])->withExists([
+            'guarantees as has_guarantee' => fn ($guaranteeQuery) => $guaranteeQuery->where('status', 'active'),
+        ]);
 
         // فیلترها
         if (!empty($filters['type'])) {

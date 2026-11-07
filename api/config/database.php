@@ -93,65 +93,6 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
-        'gtarabar' => [
-            'driver'   => 'sqlsrv',
-            'host'     => env('GTARABAR_HOST', '127.0.0.1'),
-            'port'     => env('GTARABAR_PORT', '1433'),
-            'database' => env('GTARABAR_DATABASE', 'Gtarabar'),
-            'username' => env('GTARABAR_USERNAME', 'Karimi_read'),
-            'password' => env('GTARABAR_PASSWORD', ''),
-            'charset'  => 'utf8',
-            'prefix'   => '',
-            'collation' => 'Persian_100_CI_AI_SC',
-            ... (filter_var(env('GTARABAR_ENCRYPT', false), FILTER_VALIDATE_BOOLEAN) ? [
-                'encrypt' => 'yes',
-                'trust_server_certificate' => filter_var(env('GTARABAR_TRUST_SERVER_CERTIFICATE', true), FILTER_VALIDATE_BOOLEAN),
-            ] : []),
-            'options'  => [
-                PDO::SQLSRV_ATTR_QUERY_TIMEOUT => 30,
-                PDO::SQLSRV_ATTR_ENCODING => PDO::SQLSRV_ENCODING_UTF8,
-            ],
-        ],
-
-        'kasra' => [
-            'driver'   => 'sqlsrv',
-            'host'     => env('KASRA_HOST', 'KASRA\KASRAPLUS'),
-            'port'     => env('KASRA_PORT', ''),
-            'database' => env('KASRA_DATABASE', 'framework'),
-            'username' => env('KASRA_USERNAME', 'readonly_user'),
-            'password' => env('KASRA_PASSWORD', ''),
-            'charset'  => 'utf8',
-            'prefix'   => '',
-            'collation' => 'Persian_100_CI_AI_SC',
-            ... (filter_var(env('KASRA_ENCRYPT', false), FILTER_VALIDATE_BOOLEAN) ? [
-                'encrypt' => 'yes',
-                'trust_server_certificate' => filter_var(env('KASRA_TRUST_SERVER_CERTIFICATE', true), FILTER_VALIDATE_BOOLEAN),
-            ] : []),
-            'options'  => [
-                PDO::SQLSRV_ATTR_QUERY_TIMEOUT => 30,
-                PDO::SQLSRV_ATTR_ENCODING => PDO::SQLSRV_ENCODING_UTF8,
-            ],
-        ],
-
-            'sqlsrv_automation' => [
-                'driver' => 'sqlsrv',
-                'host' => env('AUTOMATION_DB_HOST', '172.31.5.13\Farzin'),
-                'port' => env('AUTOMATION_DB_PORT', '1433'),
-                'database' => env('AUTOMATION_DB_DATABASE', 'eOrganization'),
-                'username' => env('AUTOMATION_DB_USERNAME', 'app_UserRead'),
-                'password' => env('AUTOMATION_DB_PASSWORD', ''),
-                'charset' => 'utf8',
-                'prefix' => '',
-                'collation' => 'Persian_100_CI_AI_SC',
-                ... (filter_var(env('AUTOMATION_ENCRYPT', false), FILTER_VALIDATE_BOOLEAN) ? [
-                    'encrypt' => 'yes',
-                    'trust_server_certificate' => filter_var(env('AUTOMATION_TRUST_SERVER_CERTIFICATE', true), FILTER_VALIDATE_BOOLEAN),
-                ] : []),
-                'options'  => [
-                    PDO::SQLSRV_ATTR_QUERY_TIMEOUT => 30,
-                    PDO::SQLSRV_ATTR_ENCODING => PDO::SQLSRV_ENCODING_UTF8,
-                ],
-            ],
 
     ],
 

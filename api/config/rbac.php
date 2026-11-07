@@ -18,10 +18,11 @@ return [
         // ✅ ماژول‌های جدید: قراردادهای workflow جدید
         'contracts' => array(
             'read', 'create', 'update', 'delete',
-            'submit_to_legal', 'review', 'draft',
+            'submit_to_legal', 'submit_to_contract_unit', 'review', 'draft', 'unit_sign', 'legal_sign',
             'send_to_contractor', 'send_to_ceo', 'notify',
             'sign', 'terminate'
         ),
+        'contract-settings' => ['manage'],
 
         // ماژول‌های جدید - سامانه مدیریت قراردادها
         'parties' => [
@@ -57,6 +58,7 @@ return [
         'guarantees' => [
             'read',
             'create',
+            'manage',
             'update',
             'release',     // آزادسازی ضمانت‌نامه
         ],
@@ -115,6 +117,7 @@ return [
             'assign_users' => 'اختصاص کاربران',
             'assign_representative' => 'تعیین نماینده',
             'submit_to_legal' => 'ارسال به حقوقی',
+            'submit_to_contract_unit' => 'ارسال به واحد قراردادها',
             'review' => 'بررسی حقوقی',
             'draft' => 'تنظیم پیش‌نویس',
             'send_to_contractor' => 'ارسال به پیمانکار',
@@ -132,7 +135,7 @@ return [
 
     // تعریف نقش‌های پیش‌فرض و دسترسی‌های آن‌ها
     'default_roles' => [
-        'super_admin' => [
+        'super-admin' => [
             'name' => 'مدیر ارشد سیستم',
             'description' => 'دسترسی کامل به تمام بخش‌های سیستم',
             'permissions' => '*', // تمام دسترسی‌ها
@@ -144,7 +147,9 @@ return [
             'permissions' => [
                 'dashboard.view',
                 'parties.read', 'parties.create', 'parties.update',
-                'contracts.read', 'contracts.create', 'contracts.update', 'contracts.submit',
+                'contracts.read', 'contracts.create', 'contracts.update', 'contracts.submit_to_legal',
+                'contracts.review', 'contracts.draft', 'contracts.send_to_contractor', 'contracts.notify',
+                'contract-settings.manage',
                 'amendments.read', 'amendments.create',
                 'invoices.read',
                 'guarantees.read', 'guarantees.create',
@@ -159,7 +164,9 @@ return [
             'permissions' => [
                 'dashboard.view',
                 'parties.read',
-                'contracts.read', 'contracts.approve',
+                'contracts.read', 'contracts.create', 'contracts.review', 'contracts.draft', 'contracts.send_to_contractor',
+                'contracts.legal_sign', 'contracts.notify', 'signatures.read', 'signatures.sign',
+                'contract-settings.manage',
                 'amendments.read', 'amendments.approve',
                 'invoices.read',
                 'guarantees.read',
@@ -192,6 +199,54 @@ return [
                 'signatures.read', 'signatures.sign',
                 'documents.read',
             ],
+        ],
+
+        'unit_head' => [
+            'name' => 'رئیس واحد',
+            'description' => 'امضای قراردادهای واحد متبوع',
+            'permissions' => ['contracts.read', 'contracts.create', 'contracts.unit_sign', 'contracts.submit_to_contract_unit', 'signatures.read', 'signatures.sign'],
+        ],
+        'unit_contract_staff' => [
+            'name' => 'کارشناس قرارداد واحد',
+            'description' => 'ثبت درخواست قرارداد برای واحد سازمانی خود',
+            'permissions' => [
+                'dashboard.view',
+                'contracts.read',
+                'contracts.create',
+                'contracts.update',
+                'contracts.submit_to_legal',
+                'contracts.submit_to_contract_unit',
+            ],
+        ],
+        'unit_manager' => [
+            'name' => 'مدیر واحد',
+            'description' => 'امضای قراردادهای واحد متبوع',
+            'permissions' => ['contracts.read', 'contracts.create', 'contracts.unit_sign', 'contracts.submit_to_contract_unit', 'signatures.read', 'signatures.sign'],
+        ],
+        'unit_deputy' => [
+            'name' => 'معاون واحد',
+            'description' => 'امضای قراردادهای واحد متبوع',
+            'permissions' => ['contracts.read', 'contracts.create', 'contracts.unit_sign', 'contracts.submit_to_contract_unit', 'signatures.read', 'signatures.sign'],
+        ],
+        'deputy_ceo' => [
+            'name' => 'معاون مالی',
+            'description' => 'امضای قراردادهای تا سقف تعیین‌شده',
+            'permissions' => ['contracts.read', 'signatures.read', 'signatures.sign'],
+        ],
+        'ceo' => [
+            'name' => 'مدیرعامل',
+            'description' => 'امضای قراردادهای بالاتر از سقف تعیین‌شده',
+            'permissions' => ['contracts.read', 'signatures.read', 'signatures.sign'],
+        ],
+        'board_member' => [
+            'name' => 'عضو هیئت‌مدیره',
+            'description' => 'امضای قراردادهای بالاتر از سقف تعیین‌شده',
+            'permissions' => ['contracts.read', 'signatures.read', 'signatures.sign'],
+        ],
+        'guarantee_officer' => [
+            'name' => 'کارشناس دریافت ضمانت',
+            'description' => 'ثبت و تأیید ضمانت‌های دریافتی',
+            'permissions' => ['guarantees.manage'],
         ],
     ],
 ];

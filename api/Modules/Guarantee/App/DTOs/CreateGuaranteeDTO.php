@@ -14,6 +14,8 @@ class CreateGuaranteeDTO
         public readonly ?string $currency = 'IRR',
         public readonly ?string $bankBranch = null,
         public readonly ?string $description = null,
+        public readonly string $instrumentType = 'bank_guarantee',
+        public readonly ?string $instrumentNumber = null,
     ) {}
 
     public static function fromArray(array $data): self
@@ -28,6 +30,8 @@ class CreateGuaranteeDTO
             currency: $data['currency'] ?? 'IRR',
             bankBranch: $data['bank_branch'] ?? null,
             description: $data['description'] ?? null,
+            instrumentType: $data['instrument_type'],
+            instrumentNumber: $data['instrument_number'] ?? null,
         );
     }
 }

@@ -221,7 +221,7 @@
                 />
 
                 <Button
-                    v-if="can('contracts.update') && ['draft', 'pending_internal_approval'].includes(data.status)"
+                    v-if="(can('contracts.update') && ['draft', 'rejected_by_legal'].includes(data.status)) || (can('contracts.update') && can('contracts.review') && data.status === 'pending_contract_review') || (can('contracts.draft') && ['pending_legal_review', 'legal_draft'].includes(data.status))"
                     icon="pi pi-pencil"
                     severity="warn"
                     text
@@ -230,6 +230,51 @@
                     v-tooltip="'ویرایش'"
                     @click="editContract(data)"
                 />
+                <Button
+                    v-if="can('contracts.submit_to_contract_unit') && ['draft', 'rejected_by_legal'].includes(data.status)"
+                    icon="pi pi-send"
+                    severity="success"
+                    text
+                    rounded
+                    size="small"
+                    v-tooltip="'ارسال به واحد قراردادها'"
+                    @click="submitToContractReview(data)"
+                />
+                <Button
+                    v-if="can('contracts.submit_to_legal') && data.status === 'pending_contract_review'"
+                    icon="pi pi-arrow-left"
+                    severity="info"
+                    text
+                    rounded
+                    size="small"
+                    v-tooltip="'ارسال به واحد حقوقی'"
+                    @click="submitReviewedContractToLegal(data)"
+                />
+                <Button
+                    v-if="can('contracts.draft') && can('contracts.send_to_contractor') && ['pending_legal_review', 'legal_draft'].includes(data.status)"
+                    icon="pi pi-send"
+                    severity="success"
+                    text
+                    rounded
+                    size="small"
+                    v-tooltip="'ارسال به پیمانکار'"
+                    @click="sendLegalReviewToContractor(data)"
+                />
+                <div v-if="can('contracts.notify') && data.status === 'pending_notification'" class="flex flex-col items-center">
+                  <Button
+                      icon="pi pi-bell"
+                      severity="success"
+                      text
+                      rounded
+                      size="small"
+                      :disabled="data.requires_guarantee && !data.has_guarantee"
+                      v-tooltip="data.requires_guarantee && !data.has_guarantee ? 'ابتدا واحد مالی باید ضمانت دریافتی را ثبت کند' : 'ابلاغ به پیمانکار'"
+                      @click="handleNotifyContractor(data)"
+                  />
+                  <small v-if="data.requires_guarantee && !data.has_guarantee" class="max-w-48 text-center text-xs leading-5 text-amber-700">
+                    غیرفعال: تا ثبت {{ data.guarantee_instrument_type === 'check' ? 'چک ضمانت' : data.guarantee_instrument_type === 'promissory_note' ? 'سفته' : 'ضمانت‌نامه بانکی' }} تحویل‌شده توسط واحد مالی، ابلاغ ممکن نیست.
+                  </small>
+                </div>
                 <!-- ✅ دکمه جدید: ارسال به پیمانکار -->
                 <Button
                  v-if="can('contracts.submit') &&
@@ -267,6 +312,28 @@
         </DataTable>
       </div>
     </section>
+
+    <Dialog
+        v-model:visible="notificationDialogVisible"
+        modal
+        :draggable="false"
+        :style="{ width: 'min(900px, 95vw)' }"
+        header="تنظیم و ابلاغ نامه به پیمانکار"
+        dir="rtl"
+    >
+      <div v-if="notificationContract" class="space-y-4">
+        <div class="rounded-xl border border-surface-200 bg-surface-50 p-3 text-sm leading-7">
+          <div><strong>قرارداد:</strong> {{ notificationContract.contract_number }} — {{ notificationContract.subject }}</div>
+          <div><strong>پیمانکار:</strong> {{ notificationContract.party?.name || 'پیمانکار' }}</div>
+        </div>
+        <p class="text-sm text-surface-600">متن پیش‌نویس را بررسی و در صورت نیاز ویرایش کنید. با انتخاب «ابلاغ به پیمانکار»، همین نسخه در پرونده قرارداد ثبت و برای پیمانکار ابلاغ می‌شود.</p>
+        <Editor v-model="notificationLetterBody" editorStyle="height: 360px" :readonly="notifyingContractor" />
+        <div class="flex justify-end gap-2 pt-2">
+          <Button label="انصراف" severity="secondary" text :disabled="notifyingContractor" @click="notificationDialogVisible = false" />
+          <Button label="ابلاغ به پیمانکار" icon="pi pi-send" :loading="notifyingContractor" :disabled="!notificationLetterBody?.replace(/<[^>]*>/g, '').trim()" @click="submitNotification" />
+        </div>
+      </div>
+    </Dialog>
   </div>
   </div>
 </template>
@@ -277,6 +344,8 @@ import { useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
+import Dialog from 'primevue/dialog'
+import Editor from 'primevue/editor'
 import { useConfirm } from 'primevue/useconfirm'
 import { useContractStore } from '@/stores/contractStore'
 import { usePermission } from '@/composables/usePermission'
@@ -289,6 +358,7 @@ import AmountDisplay from '@/components/contract/AmountDisplay.vue'
 import DateDisplay from '@/components/contract/DateDisplay.vue'
 import { showToast } from '@/plugins/toast'
 import {contractService} from "@/services/contractService.js";
+import { workflowService } from '@/services/workflowService.js'
 
 const router = useRouter()
 const contractStore = useContractStore()
@@ -300,6 +370,10 @@ const confirm = useConfirm()
 const filters = ref({})
 const sortField = ref('')
 const sortOrder = ref(1)
+const notificationDialogVisible = ref(false)
+const notificationContract = ref(null)
+const notificationLetterBody = ref('')
+const notifyingContractor = ref(false)
 
 
 
@@ -328,7 +402,110 @@ const editContract = (contract) => {
     })
     return
   }
+  if (['pending_legal_review', 'legal_draft'].includes(contract.status)) {
+    router.push(`/contracts/${contract.id}`)
+    return
+  }
   router.push(`/contracts/${contract.id}/edit`)
+}
+
+const sendLegalReviewToContractor = (contract) => {
+  confirm.require({
+    message: `پس از بررسی حقوقی، قرارداد «${contract.subject || contract.contract_number}» برای امضای پیمانکار ارسال شود؟`,
+    header: 'ارسال به پیمانکار',
+    icon: 'pi pi-send',
+    acceptLabel: 'ارسال',
+    rejectLabel: 'انصراف',
+    accept: async () => {
+      try {
+        if (contract.status === 'pending_legal_review') {
+          if (!contract.content?.trim()) {
+            showToast({ severity: 'warn', summary: 'متن قرارداد لازم است', detail: 'ابتدا قرارداد را باز کنید، متن حقوقی را تکمیل و ذخیره کنید.', life: 4500 })
+            return
+          }
+          await workflowService.createLegalDraft(contract.id, { content: contract.content })
+        }
+        await contractService.sendToContractor(contract.id)
+        showToast({ severity: 'success', summary: 'ارسال شد', detail: 'قرارداد برای امضای پیمانکار ارسال شد.', life: 3500 })
+        await contractStore.fetchContracts(filters.value)
+      } catch (err) {
+        showToast({ severity: 'error', summary: 'خطا', detail: err.response?.data?.message || 'ارسال قرارداد انجام نشد.', life: 5000 })
+      }
+    },
+  })
+}
+
+const handleNotifyContractor = (contract) => {
+  notificationContract.value = contract
+  const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[char])
+  const contractor = escapeHtml(contract.party?.name || 'پیمانکار')
+  const subject = escapeHtml(contract.subject || '—')
+  const number = escapeHtml(contract.contract_number || '—')
+  const employer = escapeHtml(contract.notification_employer_name || 'کارفرما')
+  notificationLetterBody.value = [
+    `<p>مدیریت محترم ${contractor}</p>`,
+    `<p>موضوع: ابلاغ قرارداد «${subject}»</p>`,
+    '<p>با سلام؛</p>',
+    `<p>بدین‌وسیله قرارداد شماره ${number} با موضوع «${subject}» که فی‌مابین ${employer} به‌عنوان کارفرما و ${contractor} منعقد گردیده است، جهت اجرا ابلاغ می‌شود. خواهشمند است مطابق مفاد قرارداد و برنامه زمان‌بندی، نسبت به انجام تعهدات اقدام فرمایید.</p>`,
+  ].join('')
+  notificationDialogVisible.value = true
+}
+
+const submitNotification = async () => {
+  if (!notificationContract.value || notifyingContractor.value) return
+  notifyingContractor.value = true
+  try {
+    await workflowService.notifyContractor(notificationContract.value.id, notificationLetterBody.value)
+    showToast({ severity: 'success', summary: 'ابلاغ انجام شد', detail: 'نسخه نهایی ابلاغیه برای پیمانکار ثبت و ابلاغ شد.', life: 3500 })
+    notificationDialogVisible.value = false
+    notificationContract.value = null
+    notificationLetterBody.value = ''
+    await contractStore.fetchContracts(filters.value)
+  } catch (err) {
+    showToast({ severity: 'error', summary: 'خطا در ابلاغ', detail: err.response?.data?.message || 'ابلاغ قرارداد انجام نشد.', life: 5000 })
+  } finally {
+    notifyingContractor.value = false
+  }
+}
+
+const submitToContractReview = (contract) => {
+  confirm.require({
+    message: `قرارداد «${contract.subject || contract.contract_number}» برای بررسی به واحد قراردادها ارسال شود؟`,
+    header: 'ارسال به واحد قراردادها',
+    icon: 'pi pi-send',
+    acceptLabel: 'ارسال',
+    rejectLabel: 'انصراف',
+    accept: async () => {
+      try {
+        await contractService.submitToContractReview(contract.id)
+        showToast({ severity: 'success', summary: 'ارسال شد', detail: 'قرارداد به واحد قراردادها ارسال شد.', life: 3500 })
+        await contractStore.fetchContracts(filters.value)
+      } catch (err) {
+        showToast({ severity: 'error', summary: 'خطا', detail: err.response?.data?.message || 'ارسال قرارداد انجام نشد.', life: 5000 })
+      }
+    },
+  })
+}
+
+const submitReviewedContractToLegal = (contract) => {
+  confirm.require({
+    message: `قرارداد «${contract.subject || contract.contract_number}» پس از بررسی به واحد حقوقی ارسال شود؟`,
+    header: 'ارسال به واحد حقوقی',
+    icon: 'pi pi-arrow-left',
+    acceptLabel: 'ارسال',
+    rejectLabel: 'انصراف',
+    accept: async () => {
+      try {
+        await workflowService.submitToLegal(contract.id)
+        showToast({ severity: 'success', summary: 'ارسال شد', detail: 'قرارداد برای بررسی حقوقی ارسال شد.', life: 3500 })
+        await contractStore.fetchContracts(filters.value)
+      } catch (err) {
+        showToast({ severity: 'error', summary: 'خطا', detail: err.response?.data?.message || 'ارسال قرارداد انجام نشد.', life: 5000 })
+      }
+    },
+  })
 }
 
 // ✅ تابع امن برای حذف

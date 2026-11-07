@@ -8,7 +8,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Modules\Auth\App\Models\User;
 use Modules\Contract\App\Models\Contract;
-use Modules\Contract\App\Services\ContractSettings;
 use Modules\Signature\App\Models\Signature;
 
 /**
@@ -23,7 +22,6 @@ class SigningService
 {
     public function __construct(
         private SignatureImageService $images,
-        private ContractSettings $settings,
     ) {
     }
 
@@ -131,6 +129,45 @@ class SigningService
         });
     }
 
+    public function canSignSlot(Signature $slot, User $signer): bool
+    {
+        try {
+            $contract = Contract::find($slot->signable_id);
+            if (!$contract || $slot->signable_type !== Contract::class) {
+                return false;
+            }
+            $this->assertCanSign($slot, $contract, $signer);
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function reject(Signature $slot, User $signer, string $comments): Contract
+    {
+        return DB::transaction(function () use ($slot, $signer, $comments) {
+            $slot = Signature::whereKey($slot->id)->lockForUpdate()->firstOrFail();
+            $contract = Contract::whereKey($slot->signable_id)->lockForUpdate()->firstOrFail();
+            $this->assertCanSign($slot, $contract, $signer);
+
+            $slot->fill([
+                'status' => 'rejected',
+                'signer_id' => $signer->id,
+                'role' => $this->resolveRole($slot, $signer),
+                'comments' => $comments,
+                'ip_address' => request()?->ip(),
+                'user_agent' => request()?->userAgent(),
+            ])->save();
+
+            $this->invalidate($contract, array_keys(config('signing.phases')), 'قرارداد برای اصلاح برگشت داده شد.');
+            $contract->changeStatus('legal_draft', $signer, $comments);
+            $updated = $contract->fresh();
+            event(new \Modules\Contract\App\Events\ContractStatusChanged($updated, 'legal_draft', $signer));
+
+            return $updated;
+        });
+    }
+
     /** آیا hash ثبت‌شده هنوز با محتوای فعلی قرارداد می‌خواند؟ (برای صفحه‌ی راستی‌آزمایی) */
     public function verify(Signature $slot): bool
     {
@@ -208,11 +245,16 @@ class SigningService
         }
 
         $next = $cfg['next_status'];
-        if (!empty($cfg['next_status_if_guarantee']) && $contract->requires_guarantee) {
-            $next = $cfg['next_status_if_guarantee'];
-        }
 
-        $contract->changeStatus($next, $actor, "تکمیل امضاهای فاز {$phase}");
+        $phaseLabels = [
+            'contractor' => 'پیمانکار',
+            'unit' => 'واحد متقاضی',
+            'legal' => 'حقوقی',
+            'executive' => 'مدیران مجاز',
+        ];
+        $phaseLabel = $phaseLabels[$phase] ?? 'امضا';
+        $contract->changeStatus($next, $actor, "تکمیل امضاهای مرحلهٔ {$phaseLabel}");
+        event(new \Modules\Contract\App\Events\ContractStatusChanged($contract->fresh(), $next, $actor));
     }
 
     private function assertCanSign(Signature $slot, Contract $contract, User $signer): void
@@ -230,14 +272,24 @@ class SigningService
             throw new DomainException('وضعیت فعلی قرارداد امکان این امضا را نمی‌دهد.');
         }
 
-        if (!$signer->hasAnyRole($slot->allowed_roles ?? [])) {
+        $hasSigningRole = $slot->group === 'executive'
+            ? $signer->canSignThisContract($contract)
+            : $signer->hasAnyRole($slot->allowed_roles ?? []);
+        if (!$hasSigningRole) {
             throw new DomainException('شما نقش لازم برای این امضا را ندارید.');
         }
 
         $groupCfg = config("signing.groups.{$slot->group}", []);
 
-        if (!empty($groupCfg['same_unit']) && (int) $signer->unit_id !== (int) $contract->unit_id) {
-            throw new DomainException('فقط اعضای واحد درخواست‌دهنده می‌توانند این قرارداد را امضا کنند.');
+        if (!empty($groupCfg['same_unit'])) {
+            $unitAssignment = DB::table('contract_unit_signers')
+                ->where('unit_id', $contract->unit_id)
+                ->where('user_id', $signer->id)
+                ->whereIn('unit_role', $slot->allowed_roles ?? [])
+                ->exists();
+            if (!$unitAssignment) {
+                throw new DomainException('این کاربر به‌عنوان مدیر یا امضاکننده‌ی همین واحد تعیین نشده است.');
+            }
         }
 
         if (!empty($groupCfg['same_party']) && (int) $signer->party_id !== (int) $contract->party_id) {
@@ -247,6 +299,7 @@ class SigningService
         $alreadySigned = $this->openQuery($contract)
             ->where('status', 'signed')
             ->where('signer_id', $signer->id)
+            ->where('group', $slot->group)
             ->exists();
 
         if ($alreadySigned) {
@@ -256,6 +309,15 @@ class SigningService
 
     private function resolveRole(Signature $slot, User $signer): ?string
     {
+        if ($slot->group === 'executive' && $slot->signable instanceof Contract) {
+            $roles = ['ceo'];
+            if ($slot->signable->requires_board_signature) {
+                $roles[] = 'board_member';
+            }
+
+            return collect($roles)->first(fn ($role) => $signer->hasRole($role));
+        }
+
         return collect($slot->allowed_roles ?? [])->first(fn ($role) => $signer->hasRole($role));
     }
 
@@ -293,21 +355,13 @@ class SigningService
         }
 
         $roles = $cfg['roles'];
-        if (isset($cfg['roles_high_amount']) && $this->requiresHighLevel($contract)) {
-            $roles = $cfg['roles_high_amount'];
+        if ($group === 'executive' && $contract->requires_board_signature) {
+            $roles[] = 'board_member';
         }
 
         return ($cfg['mode'] ?? 'any') === 'all'
             ? array_map(fn ($role) => [$role], $roles)
             : [$roles];
-    }
-
-    /** مبلغ در دیتابیس ریال است (مطابق Contract::getAmountInToman) */
-    private function requiresHighLevel(Contract $contract): bool
-    {
-        $rial = (int) strtok((string) $contract->current_amount, '.');
-
-        return $rial >= $this->settings->executiveThresholdToman() * 10;
     }
 
     private function openQuery(Contract $contract)

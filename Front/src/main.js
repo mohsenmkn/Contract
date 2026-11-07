@@ -53,6 +53,7 @@ import AutoComplete from 'primevue/autocomplete';
 import ToggleSwitch from 'primevue/toggleswitch';
 import AccordionTab from 'primevue/accordiontab';
 import Accordion from 'primevue/accordion';
+import Slider from 'primevue/slider';
 import ToastService from 'primevue/toastservice'
 import ConfirmationService from 'primevue/confirmationservice'
 import StatCard from '@/components/contract/StatCard.vue';
@@ -144,6 +145,7 @@ app.component('AmountDisplay', AmountDisplay);
 app.component('EmptyState', EmptyState);
 app.component('ContractStatusBadge', ContractStatusBadge);
 app.component('DateDisplay', DateDisplay);
+app.component('Slider', Slider);
 
 // ═══════════════════════════════════════════
 // Directives

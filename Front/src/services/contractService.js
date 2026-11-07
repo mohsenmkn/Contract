@@ -38,13 +38,13 @@ export const contractService = {
             .then(res => res.data)
     },
 
-    // دریافت قراردادهای بالادستی
+    // دریافت قراردادهای کارفرما
     getUpstream: (params = {}) => {
         return api.get('/contracts', { params: { ...params, type: 'upstream' } })
             .then(res => res.data)
     },
 
-    // دریافت قراردادهای پایین‌دستی
+    // دریافت قراردادهای پیمانکار
     getDownstream: (params = {}) => {
         return api.get('/contracts', { params: { ...params, type: 'downstream' } })
             .then(res => res.data)
@@ -69,6 +69,10 @@ export const contractService = {
     },
     sendToContractor: (id) => {
         return api.post(`/contracts/${id}/send-to-contractor`)
+            .then(res => res.data)
+    },
+    submitToContractReview: (id) => {
+        return api.post(`/contracts/${id}/submit-to-contract-review`)
             .then(res => res.data)
     },
 }

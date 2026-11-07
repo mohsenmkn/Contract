@@ -18,7 +18,7 @@ class SendContractToContractorService
             }
 
             if ($contract->type !== 'downstream') {
-                throw new Exception('فقط قراردادهای پایین‌دستی قابل ارسال به پیمانکار هستند.');
+                throw new Exception('فقط قراردادهایی که طرف آن‌ها پیمانکار است، قابل ارسال به پیمانکار هستند.');
             }
 
             $party = $contract->party;

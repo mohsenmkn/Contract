@@ -2,49 +2,55 @@
 
 namespace Modules\Contract\App\Services;
 
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Modules\Auth\App\Models\User;
 
-/**
- * تنظیمات قابل تغییر توسط مدیر سیستم (جدول contract_settings).
- * اگر ردیفی وجود نداشت، مقدار پیش‌فرض از config/signing.php خوانده می‌شود.
- */
 class ContractSettings
 {
-    private const KEY_THRESHOLD = 'executive_threshold_toman';
-    private const CACHE_KEY = 'contract_settings.executive_threshold_toman';
+    private const KEY_LETTERHEAD_PATH = 'print_letterhead_path';
+    private const KEY_EXPIRY_ALERTS = 'contract_expiry_alerts';
 
-    /** آستانه‌ی امضای عالی (تومان) */
-    public function executiveThresholdToman(): int
+    public function expiryAlertSettings(): array
     {
-        return (int) Cache::remember(self::CACHE_KEY, 300, function () {
-            $raw = DB::table('contract_settings')->where('key', self::KEY_THRESHOLD)->value('value');
-
-            return $raw !== null
-                ? (int) json_decode($raw)
-                : (int) config('signing.executive_threshold_toman');
-        });
+        $value = DB::table('contract_settings')->where('key', self::KEY_EXPIRY_ALERTS)->value('value');
+        $settings = is_string($value) ? json_decode($value, true) : null;
+        return [
+            'days_before' => collect($settings['days_before'] ?? [30, 7, 1])->map(fn ($day) => (int) $day)
+                ->filter(fn ($day) => $day >= 1 && $day <= 365)->unique()->sortDesc()->values()->all(),
+            'channels' => array_values(array_intersect($settings['channels'] ?? ['in_app', 'email', 'sms'], ['in_app', 'email', 'sms'])),
+            'phone_numbers' => array_values(array_filter($settings['phone_numbers'] ?? [], fn ($value) => is_string($value) && $value !== '')),
+            'email_addresses' => array_values(array_filter($settings['email_addresses'] ?? [], fn ($value) => is_string($value) && $value !== '')),
+            'send_time' => preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $settings['send_time'] ?? '')
+                ? $settings['send_time']
+                : '08:00',
+        ];
     }
 
-    public function setExecutiveThresholdToman(int $value, ?User $by = null): void
+    public function setExpiryAlertSettings(array $settings, ?User $by = null): void
     {
-        $old = $this->executiveThresholdToman();
+        DB::table('contract_settings')->updateOrInsert(
+            ['key' => self::KEY_EXPIRY_ALERTS],
+            ['value' => json_encode($settings, JSON_UNESCAPED_UNICODE), 'updated_by' => $by?->id, 'updated_at' => now()]
+        );
+    }
+
+    public function letterheadPath(): ?string
+    {
+        $path = DB::table('contract_settings')->where('key', self::KEY_LETTERHEAD_PATH)->value('value');
+
+        return $path !== null ? (string) json_decode($path) : null;
+    }
+
+    public function setLetterheadPath(?string $path, ?User $by = null): void
+    {
+        if ($path === null) {
+            DB::table('contract_settings')->where('key', self::KEY_LETTERHEAD_PATH)->delete();
+            return;
+        }
 
         DB::table('contract_settings')->updateOrInsert(
-            ['key' => self::KEY_THRESHOLD],
-            ['value' => json_encode($value), 'updated_by' => $by?->id, 'updated_at' => now()]
+            ['key' => self::KEY_LETTERHEAD_PATH],
+            ['value' => json_encode($path), 'updated_by' => $by?->id, 'updated_at' => now()]
         );
-
-        Cache::forget(self::CACHE_KEY);
-
-        // تغییر آستانه تعیین می‌کند چه کسی امضا کند؛ ردپا بماند
-        Log::info('contract setting changed', [
-            'key' => self::KEY_THRESHOLD,
-            'old' => $old,
-            'new' => $value,
-            'user_id' => $by?->id,
-        ]);
     }
 }

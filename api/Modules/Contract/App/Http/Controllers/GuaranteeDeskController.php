@@ -28,8 +28,9 @@ class GuaranteeDeskController extends Controller
         $this->authorizeDesk();
 
         $contracts = Contract::with('party')
-            ->where('status', 'pending_guarantee')
+            ->whereIn('status', ['pending_notification', 'pending_guarantee'])
             ->where('requires_guarantee', true)
+            ->whereDoesntHave('guarantees', fn ($query) => $query->where('status', 'active'))
             ->latest('id')
             ->paginate(15);
 
@@ -70,7 +71,7 @@ class GuaranteeDeskController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'دریافت ضمانت تأیید و قرارداد برای امضای واحد متقاضی ارسال شد.',
+            'message' => 'ضمانت دریافت‌شده ثبت شد؛ امکان ابلاغ قرارداد فعال است.',
         ]);
     }
 
@@ -95,6 +96,8 @@ class GuaranteeDeskController extends Controller
             'currency' => $contract->currency,
             'status' => $contract->status,
             'status_label' => $contract->status_label,
+            'guarantee_type' => $contract->guarantee_type,
+            'guarantee_instrument_type' => $contract->guarantee_instrument_type,
         ];
     }
 }

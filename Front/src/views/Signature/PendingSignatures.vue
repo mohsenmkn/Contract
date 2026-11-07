@@ -4,7 +4,6 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSignatureStore } from '@/stores/signatureStore'
 import { useDateFormatter } from '@/composables/useDateFormatter'
-import DateDisplay from '@/components/contract/DateDisplay.vue'
 import EmptyState from '@/components/contract/EmptyState.vue'
 import Tag from 'primevue/tag'
 
@@ -13,10 +12,7 @@ const signatureStore = useSignatureStore()
 const { toJalaliDateTime } = useDateFormatter()
 
 const activeTab = ref('all')
-
-onMounted(() => {
-  signatureStore.fetchMyPendingSignatures()
-})
+onMounted(() => signatureStore.fetchMyPendingSignatures())
 
 const tabs = computed(() => [
   { key: 'all', label: 'همه', icon: 'pi pi-list', count: signatureStore.pendingSignatures.length },
@@ -39,9 +35,13 @@ const getDocumentLabel = (signature) => {
 }
 
 const handleView = (signature) => {
+  if (signature.group) {
+    router.push(`/signatures/${signature.id}`)
+    return
+  }
   const type = signature.signable_type || ''
   if (type.includes('Contract')) {
-    router.push(`/contracts/${signature.signable_id}?tab=signatures`)
+    router.push(`/signatures/${signature.id}`)
   } else if (type.includes('Amendment')) {
     router.push(`/amendments/${signature.signable_id}`)
   }
@@ -69,6 +69,10 @@ const handleView = (signature) => {
           class="!text-sm"
       />
     </div>
+
+    <Message severity="info" :closable="false">
+      برای تعریف یا تغییر تصویر امضای الکترونیکی، با مدیر کل سامانه یا واحد حقوقی و قراردادها هماهنگ کنید.
+    </Message>
 
     <!-- Tabs -->
     <Card>

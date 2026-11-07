@@ -1,66 +1,79 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# مستندات API سامانه مدیریت قراردادها
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API با Laravel و معماری ماژولار Laravel Modules پیاده‌سازی شده است. مسیرهای نسخهٔ جاری معمولاً زیر `/api/v1` هستند و مسیرهای محافظت‌شده از `auth:sanctum` استفاده می‌کنند.
 
-## About Laravel
+## نصب و اجرا
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+از پوشهٔ `api/`:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+```powershell
+composer install
+Copy-Item .env.example .env
+php artisan key:generate
+```
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+پایگاه دادهٔ MySQL و مقادیر `APP_URL`، `DB_*`، `FILESYSTEM_DISK` را در `.env` تنظیم کنید. سپس:
 
-## Learning Laravel
+```powershell
+php artisan migrate --seed
+php artisan storage:link
+php artisan serve
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+در Windows/Laragon می‌توان به‌جای `artisan serve` از Virtual Host موجود استفاده کرد. پیش از اجرای seed در محیطی که داده دارد، کد seeder را مرور کنید.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## ماژول‌ها
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+هر ماژول در `Modules/<Name>/` شامل بخش‌هایی مانند `App/`, `Database/`, `routes/`, `Resources/` و `config/` است. توضیح جزئی هر ماژول در README همان پوشه است.
 
-## Laravel Sponsors
+| ماژول | مسئولیت |
+|---|---|
+| Acl | نقش‌ها، مجوزها، گروه‌های کاربری و RBAC |
+| Alert | نقطهٔ ورود/اطلاعات هشدار کاربر |
+| Amendment | الحاقیه‌های قرارداد |
+| Auth | ورود، OTP بازیابی، پروفایل و نشست |
+| Contract | قرارداد، گردش‌کار، تنظیمات، میز ضمانت و اعلان‌های قرارداد |
+| Dashboard | آمار و داشبوردهای متناسب با نقش |
+| Document | نقطهٔ ورود اسناد کاربر و مسیرهای مستندات |
+| Guarantee | ثبت، نمایش و آزادسازی ضمانت‌نامه |
+| Invoice | صورت‌وضعیت‌ها |
+| Organization | واحدها، نگاشت و امضاکنندگان واحد |
+| Party | طرف‌های قرارداد |
+| Payment | پرداخت‌ها |
+| Signature | اسلات امضا، OTP، امضای سند و دارایی امضا |
+| User | مدیریت کاربران و اطلاعات پایه |
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+## مسیرهای پرکاربرد
 
-### Premium Partners
+- `/auth/*`: احراز هویت، پروفایل و خروج.
+- `/contracts/*`: قراردادها، گردش، تاریخچه، تنظیم چاپ و سقف امضا.
+- `/organizational-units/*`: واحدها و تخصیص نماینده/امضاکنندگان.
+- `/guarantees/*`, `/guarantee-desk/*`: ضمانت‌نامه و دریافت حضوری.
+- `/signatures/*`, `/signature-assets/*`: امضای در انتظار، امضای OTP و تصویر امضا.
+- `/acl/*`: نقش‌ها، مجوزها و گروه‌ها.
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+برای فهرست کامل و جاری، routeهای هر ماژول را در `Modules/<Name>/routes/api.php` بررسی کنید؛ این فایل مرجع نهایی endpointهاست.
 
-## Contributing
+## RBAC و دسترسی داده
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- مجوزهای پایه و نقش‌های پیش‌فرض در `config/rbac.php` تعریف شده‌اند؛ شناسهٔ فنی مجوزها به شکل `module.action` است.
+- تنظیم مراحل و گروه‌های امضا و برچسب نقش امضاکننده در `config/signing.php` نگهداری می‌شوند.
+- کنترل مجوز به‌تنهایی کافی نیست: قرارداد باید در دامنهٔ دسترسی کاربر نیز باشد (واحد سازمانی، پیمانکار مرتبط یا نقش امضاکننده).
+- نقش `contractor` عمداً به تاریخچهٔ گردش داخلی دسترسی ندارد.
+- ثبت یا تغییر امضای کاربران از مسیر Signature Assets با دسترسی مدیر سامانه انجام می‌شود.
 
-## Code of Conduct
+## فایل‌ها و پیامک
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+سربرگ چاپ و فایل‌های امضا به ذخیره‌سازی Laravel وابسته‌اند. مقدار `FILESYSTEM_DISK` باید با محیط متناسب باشد و برای دیسک عمومی، لینک storage در دسترس باشد. ارسال OTP به تنظیمات provider پیامک وابسته است؛ نام و مقدارهای لازم را از `.env.example` و کلاس‌های `Modules/Signature` استخراج و در secret store محیط قرار دهید. کلیدهای واقعی را در README، Git یا خروجی لاگ قرار ندهید.
 
-## Security Vulnerabilities
+## راهنمای سریع عیب‌یابی
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+- خطای 401: نشست/توکن Sanctum و پیکربندی CORS/دامنه را بررسی کنید.
+- خطای 403: نقش، مجوز، مالکیت/واحد پرونده و نقش‌های مجاز اسلات امضا را جداگانه بررسی کنید.
+- فایل سربرگ یا امضا بارگیری نمی‌شود: `contract_settings`، وجود فایل در دیسک انتخابی و دسترسی خواندن/نوشتن را بررسی کنید.
+- OTP ارسال نمی‌شود: پیکربندی provider، شمارهٔ همراه، اعتبار قالب و پاسخ ثبت‌شده در لاگ امن را بررسی کنید.
+- مسیر 404: فایل `routes/api.php` ماژول و prefix گروه `/api/v1` را بررسی کنید؛ پس از تغییر routeها در سرور cache route را پاک/بازسازی کنید.
 
-## License
+## نکتهٔ توسعه
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+`composer.json` نسخهٔ Laravel `^10.0` و PHP `^8.1` را مشخص می‌کند. مستندات یا کدهای خارج از composer.json را مبنای نسخهٔ فریم‌ورک قرار ندهید. اجرای migration یا seed روی پایگاه دادهٔ دارای داده را با برنامهٔ پشتیبان‌گیری انجام دهید.

@@ -11,7 +11,7 @@ export function usePermission() {
         if (!authStore.user) return false
 
         // مدیر ارشد همه دسترسی‌ها را دارد
-        if (authStore.user.hasRole?.('super_admin')) return true
+        if (authStore.user.hasRole?.('super-admin')) return true
 
         const permissions = authStore.user.permissions || []
         return permissions.includes(permission)
@@ -46,7 +46,7 @@ export function usePermission() {
 
     // آیا کاربر مدیر است؟
     const isManager = computed(() => {
-        return hasAnyRole(['super_admin', 'contract_manager'])
+        return hasAnyRole(['super-admin', 'contract_manager'])
     })
 
     // آیا کاربر کارشناس مالی است؟

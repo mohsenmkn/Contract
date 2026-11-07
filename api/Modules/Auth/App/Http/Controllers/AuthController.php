@@ -92,6 +92,9 @@ class AuthController extends Controller
 
                 // استخراج فقط نام نقش‌ها به صورت آرایه
                 'roles'         => $user->roles->pluck('name')->values()->toArray(),
+                'role_display_names' => $user->roles->mapWithKeys(fn ($role) => [
+                    $role->name => $role->display_name ?: $role->name,
+                ])->all(),
 
                 // استخراج فقط نام دسترسی‌ها به صورت آرایه یکتا
                 'permissions'   => $user->getAllPermissions()->pluck('name')->unique()->values()->toArray(),
@@ -242,6 +245,7 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         $user = $request->user();
+        $user->loadMissing('roles');
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         return response()->json([
@@ -252,6 +256,9 @@ class AuthController extends Controller
                 'personnel_code'=> $user->personnel_code ?? null,
                 'email' => $user->email ?? null,
                 'roles' => $user->getRoleNames()->values(),
+                'role_display_names' => $user->roles->mapWithKeys(fn ($role) => [
+                    $role->name => $role->display_name ?: $role->name,
+                ])->all(),
                 'permissions' => $user->getAllPermissions()->pluck('name')->values(),
             ],
         ]);

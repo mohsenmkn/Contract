@@ -11,6 +11,19 @@ class ContractItemResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'employer_contract_item_id' => $this->employer_contract_item_id,
+            'employer_contract_item' => $this->whenLoaded('employerContractItem', fn () => $this->employerContractItem ? [
+                'id' => $this->employerContractItem->id,
+                'item_code' => $this->employerContractItem->item_code,
+                'description' => $this->employerContractItem->description,
+                'unit' => $this->employerContractItem->unit,
+                'quantity' => (float) $this->employerContractItem->quantity,
+                'unit_price' => (float) $this->employerContractItem->unit_price,
+            ] : null),
+            'remaining_framework_quantity' => $this->when(
+                $this->resource->getAttribute('remaining_framework_quantity') !== null,
+                fn () => (float) $this->resource->getAttribute('remaining_framework_quantity'),
+            ),
             'item_code' => $this->item_code,
             'description' => $this->description,
             'unit' => $this->unit,

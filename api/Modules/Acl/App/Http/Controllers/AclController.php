@@ -32,8 +32,12 @@ class AclController extends Controller
     {
         // در فرانت‌اند برای ویرایش به پرمیشن‌های هر نقش نیاز داریم
         //return response()->json(Role::with('permissions')->get());
-        $roles = Role::with('permissions')->get();
-        return response()->json($roles);
+        $roles = Role::query()
+            ->select(['id', 'name', 'display_name', 'description'])
+            ->orderBy('display_name')
+            ->get();
+
+        return response()->json(['data' => $roles]);
     }
 
     // ساخت نقش جدید
@@ -42,11 +46,17 @@ class AclController extends Controller
         try {
             $validated = $request->validate([
                 'name' => 'required|string|unique:roles,name',
+                'display_name' => 'required|string|max:255',
+                'description' => 'nullable|string|max:2000',
                 'permissions' => 'nullable|array',
                 'permissions.*' => 'string|exists:permissions,name' // نام پرمیشن‌ها
             ]);
 
             $role = Role::create(['name' => $validated['name'], 'guard_name' => 'web']);
+            $role->forceFill([
+                'display_name' => $validated['display_name'],
+                'description' => $validated['description'] ?? null,
+            ])->save();
 
             // اختصاص پرمیشن‌ها به نقش
             if (!empty($validated['permissions'])) {
@@ -64,22 +74,25 @@ class AclController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $request->validate([
+            $validated = $request->validate([
                 'name' => 'required|string|max:255|unique:roles,name,' . $id,
+                'display_name' => 'required|string|max:255',
+                'description' => 'nullable|string|max:2000',
                 'permissions' => 'nullable|array',
                 'permissions.*' => 'exists:permissions,name',
             ]);
 
-            // ۲. پیدا کردن نقش مورد نظر
             $role = Role::findOrFail($id);
 
-            // ۳. بروزرسانی نام نقش
-            $role->update([
-                'name' => $request->name
-            ]);
+            // Role names are permission-system keys. Keep the existing key stable;
+            // only the human-readable label and description are editable here.
+            $role->forceFill([
+                'display_name' => $validated['display_name'],
+                'description' => $validated['description'] ?? null,
+            ])->save();
 
-            if ($request->has('permissions')) {
-                $role->syncPermissions($request->permissions);
+            if (array_key_exists('permissions', $validated)) {
+                $role->syncPermissions($validated['permissions'] ?? []);
             }
 
             return response()->json([

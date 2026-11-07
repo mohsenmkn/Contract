@@ -22,6 +22,12 @@ class ContractResource extends JsonResource
             'subject' => $this->subject,
             'type' => $this->type,
             'type_label' => $this->type === 'upstream' ? 'کارفرما' : 'پیمانکار',
+            'parent_contract_id' => $this->parent_contract_id,
+            'is_within_employer_contract' => $this->type === 'downstream' && $this->parent_contract_id !== null,
+            'remaining_framework_amount' => $this->when(
+                $this->resource->getAttribute('remaining_framework_amount') !== null,
+                fn () => (float) $this->resource->getAttribute('remaining_framework_amount'),
+            ),
             'status' => $this->status,
             'status_label' => $this->getStatusLabel(),
             'start_date' => $this->start_date?->format('Y-m-d'),
@@ -30,6 +36,13 @@ class ContractResource extends JsonResource
             'current_amount' => (float) $this->current_amount,
             'currency' => $this->currency,
             'description' => $this->description,
+            'requires_guarantee' => (bool) $this->requires_guarantee,
+            'guarantee_type' => $this->guarantee_type,
+            'guarantee_instrument_type' => $this->guarantee_instrument_type,
+            'requires_board_signature' => (bool) $this->requires_board_signature,
+            'has_guarantee' => $this->resource->relationLoaded('guarantees')
+                ? $this->guarantees->contains(fn ($guarantee) => $guarantee->status === 'active')
+                : (bool) ($this->resource->getAttribute('has_guarantee') ?? false),
 
             'content' => $this->content,
             'pages_count' => $this->pages_count ?? $this->calculatePagesCount(),
@@ -62,6 +75,9 @@ class ContractResource extends JsonResource
             'parent_contract' => new self($this->whenLoaded('parentContract')),
             'approved_by' => new UserResource($this->whenLoaded('approver')),
             'notified_at' => $this->notified_at?->format('Y-m-d H:i:s'),
+            'notification_letter' => $this->notification_letter_data,
+            'notification_employer_name' => config('app.contract_employer_name', config('app.name')),
+            'executive_signatures' => $this->whenLoaded('executiveSignatures'),
             'can_transition_to' => $this->getAvailableTransitions(),
 
 
@@ -72,9 +88,17 @@ class ContractResource extends JsonResource
     private function getStatusLabel(): string
     {
         return match($this->status) {
+            'pending_contract_review' => 'در انتظار بررسی واحد قراردادها',
             'draft' => 'پیش‌نویس',
-            'pending_internal_approval' => 'در انتظار تایید داخلی',
+            'pending_legal_review' => 'در انتظار بررسی حقوقی',
+            'legal_draft' => 'پیش‌نویس حقوقی',
+            'rejected_by_legal' => 'رد شده توسط حقوقی',
             'pending_contractor_sign' => 'در انتظار امضای پیمانکار',
+            'pending_guarantee' => 'در انتظار دریافت ضمانت',
+            'pending_unit_sign' => 'در انتظار امضای واحد متقاضی',
+            'pending_legal_sign' => 'در انتظار امضای حقوقی',
+            'pending_executive_sign' => 'در انتظار امضای مدیران مجاز',
+            'pending_notification' => 'در انتظار ابلاغ',
             'active' => 'فعال',
             'expiring' => 'در حال اتمام',
             'completed' => 'خاتمه یافته',

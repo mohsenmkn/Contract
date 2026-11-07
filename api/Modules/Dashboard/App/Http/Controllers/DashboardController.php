@@ -13,6 +13,59 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    /** Return contract metrics and recent contracts for the authenticated user's unit only. */
+    public function unitDashboard(): JsonResponse
+    {
+        $user = auth()->user();
+        $unitRoles = ['unit_contract_staff', 'unit_head', 'unit_manager', 'unit_deputy', 'unit_representative'];
+
+        abort_unless($user && $user->hasAnyRole($unitRoles), 403, 'دسترسی داشبورد واحد برای این کاربر مجاز نیست.');
+
+        $assignedUnitId = DB::table('contract_unit_signers')
+            ->where('user_id', $user->id)
+            ->value('unit_id');
+        $unit = $assignedUnitId
+            ? \Modules\Organization\App\Models\OrganizationalUnit::find($assignedUnitId)
+            : $user->getUnit();
+        abort_unless($unit, 403, 'برای کاربر شما واحد سازمانی ثبت نشده است.');
+
+        $contracts = Contract::query()->where('unit_id', $unit->id);
+        $activeStatuses = ['active', 'expiring'];
+        $pendingStatuses = [
+            'pending_contract_review',
+            'draft', 'pending_legal_review', 'legal_draft', 'rejected_by_legal', 'pending_contractor_sign',
+            'pending_guarantee', 'pending_unit_sign', 'pending_legal_sign',
+            'pending_executive_sign', 'pending_notification',
+        ];
+
+        $statusCounts = (clone $contracts)
+            ->select('status', DB::raw('COUNT(*) as count'))
+            ->groupBy('status')
+            ->pluck('count', 'status');
+
+        $stats = [
+            'total' => (clone $contracts)->count(),
+            'active' => (clone $contracts)->whereIn('status', $activeStatuses)->count(),
+            'pending' => (clone $contracts)->whereIn('status', $pendingStatuses)->count(),
+            'expiring' => (clone $contracts)->expiringSoon(30)->count(),
+            'active_amount' => (clone $contracts)->whereIn('status', $activeStatuses)->sum('current_amount'),
+        ];
+
+        $recentContracts = (clone $contracts)
+            ->latest()
+            ->limit(8)
+            ->get(['id', 'contract_number', 'subject', 'status', 'current_amount', 'created_at']);
+
+        return response()->json([
+            'data' => [
+                'unit' => ['id' => $unit->id, 'name' => $unit->name, 'code' => $unit->code],
+                'stats' => $stats,
+                'statuses' => $statusCounts,
+                'recent_contracts' => $recentContracts,
+            ],
+        ]);
+    }
+
     /**
      * آمار کلی قراردادها
      */

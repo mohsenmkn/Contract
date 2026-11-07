@@ -18,7 +18,7 @@
               v-if="can('contracts.create')"
               label="درخواست جدید"
               icon="pi pi-plus"
-              @click="$router.push('/contract-requests/create')"
+              @click="$router.push('/contracts/create')"
               class="bg-blue-600 hover:bg-blue-700"
           />
         </div>
@@ -250,7 +250,10 @@ const statusOptions = [
   { label: 'پیش‌نویس', value: 'draft' },
   { label: 'در انتظار بررسی حقوقی', value: 'pending_legal_review' },
   { label: 'پیش‌نویس حقوقی', value: 'legal_draft' },
+  { label: 'رد شده توسط حقوقی', value: 'rejected_by_legal' },
   { label: 'در انتظار امضای پیمانکار', value: 'pending_contractor_sign' },
+  { label: 'در انتظار امضای واحد', value: 'pending_unit_sign' },
+  { label: 'در انتظار امضای حقوقی', value: 'pending_legal_sign' },
   { label: 'در انتظار امضای اجرایی', value: 'pending_executive_sign' },
   { label: 'در انتظار ابلاغ', value: 'pending_notification' },
   { label: 'فعال', value: 'active' },
@@ -286,7 +289,7 @@ const approvedCount = computed(() =>
 )
 
 const rejectedCount = computed(() =>
-    requests.value.filter(r => ['terminated', 'rejected'].includes(r.status)).length
+    requests.value.filter(r => ['terminated', 'rejected', 'rejected_by_legal'].includes(r.status)).length
 )
 
 // Methods
@@ -295,7 +298,11 @@ const getStatusLabel = (status) => {
     'draft': 'پیش‌نویس',
     'pending_legal_review': 'در انتظار بررسی حقوقی',
     'legal_draft': 'پیش‌نویس حقوقی',
+    'rejected_by_legal': 'رد شده توسط حقوقی',
     'pending_contractor_sign': 'در انتظار امضای پیمانکار',
+    'pending_guarantee': 'در انتظار دریافت ضمانت',
+    'pending_unit_sign': 'در انتظار امضای واحد متقاضی',
+    'pending_legal_sign': 'در انتظار امضای حقوقی',
     'pending_executive_sign': 'در انتظار امضای اجرایی',
     'pending_notification': 'در انتظار ابلاغ',
     'active': 'فعال',
@@ -310,7 +317,11 @@ const getStatusSeverity = (status) => {
     'draft': 'secondary',
     'pending_legal_review': 'warn',
     'legal_draft': 'info',
+    'rejected_by_legal': 'danger',
     'pending_contractor_sign': 'warn',
+    'pending_guarantee': 'warn',
+    'pending_unit_sign': 'warn',
+    'pending_legal_sign': 'warn',
     'pending_executive_sign': 'warn',
     'pending_notification': 'info',
     'active': 'success',
@@ -325,7 +336,11 @@ const getStatusIcon = (status) => {
     'draft': 'pi pi-file',
     'pending_legal_review': 'pi pi-clock',
     'legal_draft': 'pi pi-file-edit',
+    'rejected_by_legal': 'pi pi-times-circle',
     'pending_contractor_sign': 'pi pi-signature',
+    'pending_guarantee': 'pi pi-shield',
+    'pending_unit_sign': 'pi pi-users',
+    'pending_legal_sign': 'pi pi-briefcase',
     'pending_executive_sign': 'pi pi-user-tie',
     'pending_notification': 'pi pi-send',
     'active': 'pi pi-check-circle',
@@ -346,7 +361,7 @@ const formatDate = (date) => {
 }
 
 const canEdit = (request) => {
-  return ['draft', 'pending_legal_review'].includes(request.status)
+  return ['draft', 'rejected_by_legal'].includes(request.status)
 }
 
 const canDelete = (request) => {
@@ -384,7 +399,7 @@ const viewRequest = (request) => {
 }
 
 const editRequest = (request) => {
-  router.push(`/contract-requests/${request.id}/edit`)
+  router.push(`/contracts/${request.id}/edit`)
 }
 
 const confirmDelete = (request) => {

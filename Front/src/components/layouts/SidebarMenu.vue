@@ -478,11 +478,8 @@ const isActive = (to) => {
 // =====================================================
 
 const hasAccess = (item) => {
-
-  return (
-      !item.access ||
-      auth.can(item.access)
-  );
+  if (item.roles?.length && !auth.hasAnyRole(item.roles)) return false
+  return !item.access || auth.can(item.access)
 
 };
 

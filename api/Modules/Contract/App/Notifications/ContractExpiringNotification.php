@@ -13,18 +13,19 @@ class ContractExpiringNotification extends Notification implements ShouldQueue
     use Queueable;
 
     public function __construct(
-        public ContractAlert $alert
+        public ContractAlert $alert,
+        private array $deliveryChannels = ['mail', 'database']
     ) {}
 
     public function via($notifiable): array
     {
-        return ['mail', 'database'];
+        return $this->deliveryChannels;
     }
 
     public function toMail($notifiable): MailMessage
     {
         $contract = $this->alert->contract;
-        $daysRemaining = $contract->end_date->diffInDays(now());
+        $daysRemaining = (int) $this->alert->days_before;
 
         return (new MailMessage)
             ->subject('هشدار: قرارداد در حال اتمام است')
@@ -39,14 +40,14 @@ class ContractExpiringNotification extends Notification implements ShouldQueue
     public function toArray($notifiable): array
     {
         $contract = $this->alert->contract;
-        $daysRemaining = $contract->end_date->diffInDays(now());
+        $daysRemaining = (int) $this->alert->days_before;
 
         return [
             'type' => 'contract_expiring',
             'contract_id' => $contract->id,
             'contract_number' => $contract->contract_number,
             'days_remaining' => $daysRemaining,
-            'message' => "قرارداد تا {$daysRemaining} روز دیگر به پایان می‌رسد",
+            'message' => "قرارداد {$contract->contract_number} تا {$daysRemaining} روز دیگر به پایان می‌رسد.",
         ];
     }
 }

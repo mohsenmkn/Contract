@@ -8,7 +8,9 @@ class StoreContractRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->user()->can('contracts.create');
+        $user = auth()->user();
+        return $user?->can('contracts.create')
+            && ($this->input('type') !== 'upstream' || $user->can('contracts.review'));
     }
 
     public function rules(): array
@@ -16,6 +18,8 @@ class StoreContractRequest extends FormRequest
         return [
             'subject' => 'required|string|max:255',
             'party_id' => 'required|exists:parties,id',
+            'unit_id' => 'nullable|exists:organizational_units,id',
+            'parent_contract_id' => 'nullable|integer|exists:contracts,id',
             'type' => 'required|in:upstream,downstream',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
@@ -29,6 +33,7 @@ class StoreContractRequest extends FormRequest
             'items.*.unit' => 'required_with:items|string|max:50',
             'items.*.quantity' => 'required_with:items|numeric|min:0',
             'items.*.unit_price' => 'required_with:items|numeric|min:0',
+            'items.*.employer_contract_item_id' => 'nullable|integer|exists:contract_items,id',
         ];
     }
 

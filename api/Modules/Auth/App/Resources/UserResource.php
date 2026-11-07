@@ -27,6 +27,7 @@ class UserResource extends JsonResource
                     'role' => $this->party->role,
                 ];
             }),
+            'unit' => $this->resource->getAttribute('organizational_unit_data'),
             'is_active' => (bool) $this->is_active,
             'avatar' => $this->avatar,
             'settings' => $this->settings,

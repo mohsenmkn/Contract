@@ -56,7 +56,7 @@
           </div>
           <div>
             <div class="text-2xl font-bold text-gray-800">{{ unitsWithRepCount }}</div>
-            <div class="text-sm text-gray-500">دارای نماینده</div>
+            <div class="text-sm text-gray-500">دارای مسئول قرارداد</div>
           </div>
         </div>
       </div>
@@ -67,7 +67,7 @@
           </div>
           <div>
             <div class="text-2xl font-bold text-gray-800">{{ unitsWithoutRepCount }}</div>
-            <div class="text-sm text-gray-500">بدون نماینده</div>
+            <div class="text-sm text-gray-500">بدون مسئول قرارداد</div>
           </div>
         </div>
       </div>
@@ -161,27 +161,16 @@
           </template>
         </Column>
 
-        <Column header="نماینده واحد" style="min-width: 200px">
+        <Column header="مسئولان قراردادهای واحد" style="min-width: 260px">
           <template #body="slotProps">
-            <div v-if="slotProps.data.representative" class="flex items-center gap-2">
-              <Avatar
-                  :label="getInitials(slotProps.data.representative.user?.name)"
-                  shape="circle"
-                  size="small"
-                  class="unit-avatar"
-              />
-              <div class="min-w-0">
-                <div class="text-sm font-medium text-slate-800 truncate">
-                  {{ slotProps.data.representative.user?.name || '—' }}
-                </div>
-                <div class="text-xs text-slate-500">
-                  {{ slotProps.data.representative.user?.mobile }}
-                </div>
+            <div v-if="slotProps.data.contract_signers?.length" class="space-y-1.5">
+              <div v-for="role in unitSignerRoleOptions" :key="role.value" class="flex items-center justify-between gap-3 text-xs">
+                <span class="text-slate-500">{{ role.label }}</span>
+                <span class="font-medium text-slate-800">{{ getUnitSigner(slotProps.data, role.value)?.name || 'تعیین نشده' }}</span>
               </div>
             </div>
             <div v-else class="flex items-center gap-2 text-gray-400">
-              <UserX class="w-4 h-4" />
-              <span class="text-sm">بدون نماینده</span>
+              <UserX class="w-4 h-4" /><span class="text-sm">مسئولی برای قراردادها تعیین نشده</span>
             </div>
           </template>
         </Column>
@@ -211,10 +200,10 @@
             <div class="flex gap-2">
               <Button
                   v-if="can('units.assign_representative')"
-                  icon="pi pi-user-plus"
-                  class="p-button-rounded p-button-info p-button-text"
-                  @click="openRepresentativeDialog(slotProps.data)"
-                  tooltip="تعیین نماینده"
+                  icon="pi pi-file-signature"
+                  class="p-button-rounded p-button-primary p-button-text"
+                  @click="openUnitSignerDialog(slotProps.data)"
+                  v-tooltip.top="'تعیین امضاکننده قرارداد واحد'"
               />
               <Button
                   v-if="can('units.update')"
@@ -503,11 +492,35 @@
         </div>
       </template>
     </Dialog>
+
+    <Dialog v-model:visible="unitSignerDialog" header="تعیین مسئولان قراردادهای واحد" :modal="true" :draggable="false" style="width: 620px; max-width: 95vw">
+      <p v-if="selectedUnit" class="mb-4 text-sm text-surface-500">واحد: {{ selectedUnit.name }}</p>
+      <div class="mb-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div v-for="role in unitSignerRoleOptions" :key="role.value" class="flex items-center justify-between gap-2 rounded-lg border border-surface-200 p-3">
+          <div class="min-w-0"><div class="text-xs text-surface-500">{{ role.label }}</div><div class="truncate text-sm font-medium">{{ unitSignerAssignments[role.value]?.name || 'تعیین نشده' }}</div></div>
+          <Button v-if="unitSignerAssignments[role.value]" icon="pi pi-times" severity="danger" text rounded size="small" :aria-label="`حذف ${role.label}`" @click="unitSignerAssignments[role.value] = null" />
+        </div>
+      </div>
+      <label class="block text-sm font-medium mb-2">سمت در واحد</label>
+      <Select v-model="unitSignerRole" :options="unitSignerRoleOptions" option-label="label" option-value="value" class="w-full mb-4" />
+      <label class="block text-sm font-medium mb-2">کاربر</label>
+      <InputText v-model="repSearchQuery" class="w-full" placeholder="جستجو با نام یا موبایل" @input="searchUsers" />
+      <div v-if="repSearchResults.length" class="users-dropdown mt-2">
+        <button v-for="user in repSearchResults" :key="user.id" type="button" class="w-full text-right p-2 hover:bg-surface-100" @click="selectUnitSigner(user)">
+          {{ user.name }} · {{ user.mobile }} <i v-if="unitSignerAssignments[unitSignerRole]?.user_id === user.id || unitSignerAssignments[unitSignerRole]?.id === user.id" class="pi pi-check text-green-600" />
+        </button>
+      </div>
+      <template #footer>
+        <Button label="لغو" severity="secondary" outlined @click="unitSignerDialog = false" />
+        <Button label="ذخیره مسئولان" icon="pi pi-check" :loading="saving" @click="saveUnitSigner" />
+      </template>
+    </Dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import Select from 'primevue/select'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import { useApiErrorHandler } from '@/composables/useApiErrorHandler'
@@ -531,6 +544,15 @@ const loading = ref(false)
 const saving = ref(false)
 const unitDialog = ref(false)
 const representativeDialog = ref(false)
+const unitSignerDialog = ref(false)
+const unitSignerRole = ref('unit_contract_staff')
+const unitSignerAssignments = ref({})
+const unitSignerRoleOptions = [
+  { label: 'کارشناس قرارداد واحد', value: 'unit_contract_staff' },
+  { label: 'رئیس واحد', value: 'unit_head' },
+  { label: 'مدیر واحد', value: 'unit_manager' },
+  { label: 'معاون واحد', value: 'unit_deputy' },
+]
 const isEdit = ref(false)
 const selectedUnit = ref(null)
 const searchQuery = ref('')
@@ -576,8 +598,11 @@ const filteredUnits = computed(() => {
 })
 
 const activeUnitsCount = computed(() => units.value.filter(u => u.is_active).length)
-const unitsWithRepCount = computed(() => units.value.filter(u => u.representative).length)
-const unitsWithoutRepCount = computed(() => units.value.filter(u => !u.representative).length)
+const unitsWithRepCount = computed(() => units.value.filter(u => u.contract_signers?.length).length)
+const unitsWithoutRepCount = computed(() => units.value.filter(u => !u.contract_signers?.length).length)
+
+const getUnitSigner = (unit, role) =>
+  (unit.contract_signers || []).find(signer => signer.unit_role === role)
 
 const selectedRepName = computed(() => {
   if (!form.value.representative_id) return ''
@@ -725,6 +750,42 @@ const openRepresentativeDialog = (unit) => {
   repSearchQuery.value = ''
   repSearchResults.value = []
   representativeDialog.value = true
+}
+
+const openUnitSignerDialog = (unit) => {
+  selectedUnit.value = unit
+  unitSignerAssignments.value = Object.fromEntries(
+    unitSignerRoleOptions.map(role => [role.value, getUnitSigner(unit, role.value) || null])
+  )
+  unitSignerRole.value = 'unit_contract_staff'
+  repSearchQuery.value = ''
+  repSearchResults.value = []
+  unitSignerDialog.value = true
+}
+
+const selectUnitSigner = (user) => {
+  unitSignerAssignments.value[unitSignerRole.value] = user
+  repSearchQuery.value = ''
+  repSearchResults.value = []
+}
+
+const saveUnitSigner = async () => {
+  saving.value = true
+  try {
+    await api.put(`/organizational-units/${selectedUnit.value.id}/contract-signers`, {
+      assignments: Object.fromEntries(unitSignerRoleOptions.map(role => [
+        role.value,
+        unitSignerAssignments.value[role.value]?.user_id || unitSignerAssignments.value[role.value]?.id || null,
+      ])),
+    })
+    toast.add({ severity: 'success', summary: 'ثبت شد', detail: 'مسئولان قراردادهای واحد ذخیره شدند.', life: 3000 })
+    unitSignerDialog.value = false
+    await loadUnits()
+  } catch (error) {
+    handleApiError(error)
+  } finally {
+    saving.value = false
+  }
 }
 
 const searchUsers = () => {

@@ -173,7 +173,7 @@ const loadDashboard = async () => {
 
 // نمودار نوع قراردادها
     typeChartData.value = {
-      labels: ['بالادستی (کارفرما)', 'پایین‌دستی (پیمانکار)'],
+      labels: ['کارفرما', 'پیمانکار'],
       datasets: [{
         data: [
           contractStats.data.upstream || 0,

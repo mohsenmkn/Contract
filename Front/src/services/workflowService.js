@@ -40,8 +40,8 @@ export const workflowService = {
     },
 
     // ابلاغ به پیمانکار
-    notifyContractor: (contractId) => {
-        return api.post(`/contracts/${contractId}/notify`)
+    notifyContractor: (contractId, letterBody) => {
+        return api.post(`/contracts/${contractId}/notify`, { letter_body: letterBody })
             .then(res => res.data)
     },
 

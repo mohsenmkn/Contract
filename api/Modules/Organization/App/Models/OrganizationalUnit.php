@@ -5,6 +5,8 @@ namespace Modules\Organization\App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Modules\Auth\App\Models\User;
 use Modules\Contract\App\Models\Contract;
 
 class OrganizationalUnit extends Model
@@ -25,7 +27,7 @@ class OrganizationalUnit extends Model
      */
     public function representative(): HasOne
     {
-        return $this->hasOne(UnitRepresentative::class)->where('is_active', true);
+        return $this->hasOne(UnitRepresentative::class, 'unit_id', 'id')->where('is_active', true);
     }
 
     /**
@@ -42,6 +44,13 @@ class OrganizationalUnit extends Model
     public function contracts(): HasMany
     {
         return $this->hasMany(Contract::class);
+    }
+
+    public function contractSigners(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'contract_unit_signers', 'unit_id', 'user_id')
+            ->withPivot('unit_role')
+            ->withTimestamps();
     }
 
     /**

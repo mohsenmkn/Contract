@@ -65,8 +65,6 @@
           />
         </div>
       </div>
-
-      <!-- فیلترهای فعال -->
       <div v-if="searchQuery" class="mt-4 pt-4 border-t border-gray-200">
         <div class="flex items-center gap-2 flex-wrap">
           <span class="text-sm text-gray-600">فیلترهای فعال:</span>
@@ -101,7 +99,6 @@
           </div>
         </div>
       </div>
-
       <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
         <div class="flex items-center gap-4">
           <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -113,7 +110,6 @@
           </div>
         </div>
       </div>
-
       <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
         <div class="flex items-center gap-4">
           <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
@@ -125,7 +121,6 @@
           </div>
         </div>
       </div>
-
       <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
         <div class="flex items-center gap-4">
           <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
@@ -161,18 +156,34 @@
           </div>
         </template>
 
-        <Column field="name" header="نام نقش" sortable style="min-width: 200px">
+        <!-- ✅ ستون نام نقش - اصلاح شده -->
+        <Column field="name" header="نام نقش" sortable style="min-width: 300px">
           <template #body="slotProps">
             <div class="flex items-center gap-3">
               <div
-                  class="w-10 h-10 rounded-lg flex items-center justify-center"
+                  class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
                   :class="getRoleColor(slotProps.data.name)"
               >
                 <ShieldCheck class="w-5 h-5 text-white" />
               </div>
-              <div>
-                <div class="font-semibold text-gray-800">{{ slotProps.data.name }}</div>
-                <div class="text-xs text-gray-500">
+              <div class="min-w-0 flex-1">
+                <!-- ✅ نام کامل فارسی (display_name) یا name -->
+                <div
+                    class="font-bold text-gray-800 break-words leading-tight"
+                    :title="slotProps.data.display_name || slotProps.data.name"
+                >
+                  {{ slotProps.data.display_name || slotProps.data.name }}
+                </div>
+                <!-- ✅ نام سیستمی (انگلیسی) به صورت کوچکتر -->
+                <div
+                    class="text-xs text-gray-400 font-mono mt-0.5"
+                    dir="ltr"
+                    :title="slotProps.data.name"
+                >
+                  {{ slotProps.data.name }}
+                </div>
+                <div class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                  <KeyRound class="w-3 h-3" />
                   {{ slotProps.data.permissions?.length || 0 }} دسترسی
                 </div>
               </div>
@@ -206,13 +217,13 @@
           </template>
         </Column>
 
-        <Column header="دسترسی‌ها" style="min-width: 200px">
+        <Column header="دسترسی‌ها" style="min-width: 220px">
           <template #body="slotProps">
             <div class="flex flex-wrap gap-1">
               <Tag
                   v-for="perm in slotProps.data.permissions?.slice(0, 3)"
                   :key="perm.id || perm"
-                  :value="typeof perm === 'object' ? perm.name : perm"
+                  :value="typeof perm === 'object' ? (perm.display_name || perm.name) : perm"
                   severity="secondary"
                   class="text-xs"
               />
@@ -220,7 +231,8 @@
                   v-if="slotProps.data.permissions?.length > 3"
                   :value="`+${slotProps.data.permissions.length - 3}`"
                   severity="info"
-                  class="text-xs"
+                  class="text-xs cursor-pointer"
+                  @click="viewRole(slotProps.data)"
               />
               <span v-if="!slotProps.data.permissions || slotProps.data.permissions.length === 0" class="text-gray-400 text-sm">
                 بدون دسترسی
@@ -229,7 +241,7 @@
           </template>
         </Column>
 
-        <Column field="created_at" header="تاریخ ایجاد" sortable style="min-width: 120px">
+        <Column field="created_at" header="تاریخ ایجاد" sortable style="min-width: 130px">
           <template #body="slotProps">
             <div class="text-sm text-gray-600">
               {{ formatDate(slotProps.data.created_at) }}
@@ -266,7 +278,6 @@
         </Column>
       </DataTable>
 
-      <!-- پیام عدم دسترسی -->
       <div v-else class="p-12 text-center">
         <Lock class="w-16 h-16 text-gray-300 mx-auto mb-4" />
         <h3 class="text-lg font-semibold text-gray-600 mb-2">دسترسی محدود</h3>
@@ -277,21 +288,24 @@
     <!-- مودال مشاهده نقش -->
     <Dialog
         v-model:visible="viewDialog"
-        :style="{ width: '600px' }"
+        :style="{ width: '700px' }"
         header="اطلاعات نقش"
         :modal="true"
     >
       <div v-if="selectedRole" class="space-y-4">
-        <div class="flex items-center gap-4 p-4 bg-purple-50 rounded-lg">
+        <div class="flex items-center gap-4 p-4 bg-purple-50 rounded-xl">
           <div
-              class="w-16 h-16 rounded-xl flex items-center justify-center"
+              class="w-16 h-16 rounded-xl flex items-center justify-center shadow-md"
               :class="getRoleColor(selectedRole.name)"
           >
             <ShieldCheck class="w-8 h-8 text-white" />
           </div>
           <div>
-            <h3 class="text-xl font-bold text-gray-800">{{ selectedRole.name }}</h3>
-            <p class="text-sm text-gray-500">
+            <h3 class="text-xl font-bold text-gray-800">
+              {{ selectedRole.display_name || selectedRole.name }}
+            </h3>
+            <p class="text-sm text-gray-500 font-mono" dir="ltr">{{ selectedRole.name }}</p>
+            <p class="text-sm text-gray-600 mt-1">
               {{ selectedRole.userCount || 0 }} کاربر | {{ selectedRole.permissions?.length || 0 }} دسترسی
             </p>
           </div>
@@ -314,7 +328,7 @@
             <Tag
                 v-for="perm in selectedRole.permissions"
                 :key="perm.id || perm"
-                :value="typeof perm === 'object' ? perm.name : perm"
+                :value="typeof perm === 'object' ? (perm.display_name || perm.name) : perm"
                 severity="info"
             />
             <span v-if="!selectedRole.permissions || selectedRole.permissions.length === 0" class="text-gray-400 text-sm">
@@ -355,7 +369,8 @@
         @close="isModalOpen = false"
         @save="saveRole"
     />
-
+    <Toast />
+    <ConfirmDialog></ConfirmDialog>
   </div>
 </template>
 
@@ -390,12 +405,9 @@ const selectedRole = ref(null);
 const loading = ref(false);
 const authStore = useAuthStore();
 
-// جستجو
 const searchQuery = ref('');
-
 let searchTimeout = null;
 
-// آمار
 const totalRoles = computed(() => roles.value.length);
 const totalPermissions = computed(() => allPermissions.value.length);
 const totalUsersWithRoles = computed(() => {
@@ -405,17 +417,17 @@ const totalUsersWithRoles = computed(() => {
 const mostUsedRole = computed(() => {
   if (roles.value.length === 0) return null;
   return roles.value.reduce((max, role) =>
-          (role.userCount || 0) > (max.userCount || 0) ? role : max
-      , roles.value[0]);
+          (role.userCount || 0) > (max.userCount || 0) ? role : max,
+      roles.value[0]
+  );
 });
 
-// فیلتر نقش‌ها
 const filteredRoles = computed(() => {
   if (!searchQuery.value) return roles.value;
-
   const query = searchQuery.value.toLowerCase().trim();
   return roles.value.filter(role =>
-      role.name?.toLowerCase().includes(query)
+      (role.name?.toLowerCase().includes(query)) ||
+      (role.display_name?.toLowerCase().includes(query))
   );
 });
 
@@ -434,8 +446,6 @@ const fetchRoles = async () => {
   try {
     const response = await api.get('/acl/roles/all');
     const rolesData = response.data.data || response.data;
-
-    // اضافه کردن تعداد کاربران به هر نقش
     roles.value = rolesData.map(role => ({
       ...role,
       userCount: countUsersByRole(role.name),
@@ -443,6 +453,7 @@ const fetchRoles = async () => {
     }));
   } catch (error) {
     console.error('خطا در دریافت نقش‌ها:', error);
+    handleApiError(error);
   } finally {
     loading.value = false;
   }
@@ -491,13 +502,8 @@ const onSearchInput = () => {
   }, 300);
 };
 
-const applyFilters = () => {
-  // فیلتر به صورت خودکار اعمال می‌شود
-};
-
-const clearFilters = () => {
-  searchQuery.value = '';
-};
+const applyFilters = () => {};
+const clearFilters = () => { searchQuery.value = ''; };
 
 const openCreateModal = () => {
   if (!can('roles.create')) {
@@ -527,12 +533,16 @@ const saveRole = async (roleData) => {
     if (roleData.id) {
       await api.put(`/acl/roles/${roleData.id}`, {
         name: roleData.name,
+        display_name: roleData.display_name,
+        description: roleData.description,
         permissions: roleData.permissions
       });
       toast.add({ severity: 'success', summary: 'موفق', detail: 'نقش با موفقیت ویرایش شد', life: 3000 });
     } else {
       await api.post('/acl/roles', {
         name: roleData.name,
+        display_name: roleData.display_name,
+        description: roleData.description,
         permissions: roleData.permissions
       });
       toast.add({ severity: 'success', summary: 'موفق', detail: 'نقش جدید ایجاد شد', life: 3000 });
@@ -541,15 +551,13 @@ const saveRole = async (roleData) => {
     await fetchRoles();
   } catch (error) {
     console.error('خطا در ذخیره نقش:', error);
-    if (error.response && error.response.status === 422) {
-      toast.add({ severity: 'error', summary: 'خطا', detail: 'اطلاعات وارد شده معتبر نیست.', life: 5000 });
-    }
+    handleApiError(error);
   }
 };
 
 const confirmDelete = (role) => {
   confirm.require({
-    message: `آیا از حذف نقش "${role.name}" اطمینان دارید؟`,
+    message: `آیا از حذف نقش "${role.display_name || role.name}" اطمینان دارید؟`,
     header: 'تایید حذف',
     icon: 'pi pi-exclamation-triangle',
     acceptLabel: 'بله، حذف کن',
@@ -590,25 +598,15 @@ const getRoleColor = (roleName) => {
     'viewer': 'bg-gradient-to-br from-green-500 to-emerald-600',
     'editor': 'bg-gradient-to-br from-orange-500 to-amber-600',
   };
-
-  const role = roleName.toLowerCase();
+  const role = roleName?.toLowerCase() || '';
   for (const [key, color] of Object.entries(colors)) {
     if (role.includes(key)) return color;
   }
-
   return 'bg-gradient-to-br from-gray-500 to-slate-600';
 };
 
 const getAvatarColor = (userId) => {
-  const colors = [
-    'bg-blue-500',
-    'bg-green-500',
-    'bg-purple-500',
-    'bg-orange-500',
-    'bg-pink-500',
-    'bg-indigo-500',
-    'bg-teal-500',
-  ];
+  const colors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500'];
   return colors[userId % colors.length];
 };
 
@@ -625,17 +623,14 @@ const getUserCountSeverity = (count) => {
   background: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
 }
-
 .roles-table :deep(.p-datatable-thead > tr > th) {
   background: #f3f4f6;
   font-weight: 600;
   color: #374151;
 }
-
 .roles-table :deep(.p-datatable-tbody > tr) {
   transition: background-color 0.2s;
 }
-
 .roles-table :deep(.p-datatable-tbody > tr:hover) {
   background: #f9fafb;
 }

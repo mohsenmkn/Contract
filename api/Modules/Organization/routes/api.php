@@ -12,6 +12,9 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
     Route::get('organizational-units/{id}/representative', [UnitController::class, 'getRepresentative']);
     Route::post('organizational-units/{id}/representative', [UnitController::class, 'setRepresentative']);
+    Route::post('organizational-units/{id}/contract-signers', [UnitController::class, 'assignContractSigner']);
+    Route::get('organizational-units/{id}/contract-signers', [UnitController::class, 'getContractSigners']);
+    Route::put('organizational-units/{id}/contract-signers', [UnitController::class, 'syncContractSigners']);
     Route::delete('organizational-units/{id}/representative', [UnitController::class, 'removeRepresentative']);
 
     Route::get('organizational-units/my-unit', [UnitController::class, 'myUnit']);

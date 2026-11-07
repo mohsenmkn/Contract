@@ -1,37 +1,28 @@
 <!-- src/components/contract/ExecutiveSignPanel.vue -->
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useWorkflowStore } from '@/stores/contract/workflowStore'
+import { useWorkflowStore } from '@/stores/workflowStore'
 import { useAuthStore } from '@/stores/auth'
 import { useNumberFormatter } from '@/composables/useNumberFormatter'
 import { showToast } from '@/plugins/toast'
+import { useRouter } from 'vue-router'
 
 const props = defineProps({
   contract: { type: Object, required: true },
 })
 
-const emit = defineEmits(['signed', 'refresh'])
-
 const workflowStore = useWorkflowStore()
+const router = useRouter()
 const authStore = useAuthStore()
 const { formatToman } = useNumberFormatter()
 
-const comments = ref('')
-const submitting = ref(false)
 const canSignInfo = ref(null)
-const selectedRole = ref('')
 
 const amountInToman = computed(() => {
   return (parseFloat(props.contract.current_amount) || 0) / 10
 })
 
-const requiresHighLevel = computed(() => {
-  return amountInToman.value >= 900_000_000
-})
-
-const userRoles = computed(() => {
-  return authStore.roles || []
-})
+const requiresBoardSignature = computed(() => !!props.contract.requires_board_signature)
 
 const canSign = computed(() => {
   if (!canSignInfo.value) return false
@@ -40,8 +31,8 @@ const canSign = computed(() => {
 
 const cannotSignReason = computed(() => {
   if (!canSignInfo.value) return ''
-  if (requiresHighLevel.value && userRoles.value.includes('deputy_ceo')) {
-    return 'قراردادهای ۹۰۰ میلیون تومان و بالاتر فقط توسط مدیرعامل یا عضو هیئت مدیره قابل امضا هستند.'
+  if (authStore.hasRole('deputy_ceo')) {
+    return 'امضای نهایی قراردادها بر عهده مدیرعامل است.'
   }
   return canSignInfo.value.reason || ''
 })
@@ -49,39 +40,14 @@ const cannotSignReason = computed(() => {
 onMounted(async () => {
   const info = await workflowStore.checkCanSign(props.contract.id)
   canSignInfo.value = info
-
-  // انتخاب خودکار نقش کاربر
-  if (userRoles.value.includes('ceo')) selectedRole.value = 'ceo'
-  else if (userRoles.value.includes('board_member')) selectedRole.value = 'board_member'
-  else if (userRoles.value.includes('deputy_ceo')) selectedRole.value = 'deputy_ceo'
 })
 
 const handleSign = async () => {
-  if (!selectedRole.value) {
-    showToast({ severity: 'warn', summary: 'خطا', detail: 'لطفاً نقش خود را انتخاب کنید', life: 3000 })
+  if (!canSignInfo.value?.signature_id) {
+    showToast({ severity: 'info', summary: 'امضا', detail: 'در حال حاضر امضایی برای شما در انتظار نیست.', life: 3000 })
     return
   }
-
-  submitting.value = true
-  try {
-    await workflowStore.executiveSign(props.contract.id, {
-      role: selectedRole.value,
-      comments: comments.value,
-    })
-
-    showToast({ severity: 'success', summary: 'امضا ثبت شد', detail: 'قرارداد با موفقیت امضا شد', life: 4000 })
-    emit('signed')
-    emit('refresh')
-  } catch (err) {
-    showToast({
-      severity: 'error',
-      summary: 'خطا در امضا',
-      detail: err.response?.data?.message || err.message,
-      life: 5000
-    })
-  } finally {
-    submitting.value = false
-  }
+  router.push(`/signatures/${canSignInfo.value.signature_id}`)
 }
 </script>
 
@@ -112,9 +78,9 @@ const handleSign = async () => {
           <span class="font-bold text-primary">{{ formatToman(amountInToman * 10) }}</span>
         </div>
         <div>
-          <span class="text-surface-500 block mb-1">سطح امضا:</span>
-          <span :class="requiresHighLevel ? 'text-red-600 font-bold' : 'text-green-600 font-bold'">
-            {{ requiresHighLevel ? 'سطح بالا (مدیرعامل/هیئت مدیره)' : 'معاون مالی' }}
+          <span class="text-surface-500 block mb-1">امضاکنندگان لازم:</span>
+          <span class="text-primary font-bold">
+            {{ requiresBoardSignature ? 'مدیرعامل و عضو هیئت‌مدیره' : 'مدیرعامل' }}
           </span>
         </div>
       </div>
@@ -129,36 +95,9 @@ const handleSign = async () => {
     <!-- فرم امضا -->
     <template v-if="canSign && contract.status === 'pending_executive_sign'">
       <div class="space-y-3">
-        <div>
-          <label class="block text-sm font-medium mb-2">نقش امضا کننده</label>
-          <Select
-              v-model="selectedRole"
-              :options="[
-              { label: 'مدیرعامل', value: 'ceo' },
-              { label: 'معاون مالی', value: 'deputy_ceo' },
-              { label: 'عضو هیئت مدیره', value: 'board_member' },
-            ]"
-              option-label="label"
-              option-value="value"
-              class="w-full"
-              :disabled="userRoles.includes('deputy_ceo') && requiresHighLevel"
-          />
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium mb-2">توضیحات (اختیاری)</label>
-          <Textarea
-              v-model="comments"
-              rows="3"
-              class="w-full"
-              placeholder="توضیحات امضا..."
-          />
-        </div>
-
         <Button
-            label="ثبت امضا"
-            icon="pi pi-check"
-            :loading="submitting"
+            label="ادامه به صفحه امضا"
+            icon="pi pi-arrow-left"
             class="w-full"
             @click="handleSign"
         />

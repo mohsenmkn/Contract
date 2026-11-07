@@ -18,6 +18,8 @@ class Guarantee extends Model
         'contract_id',
         'guarantee_number',
         'type',
+        'instrument_type',
+        'instrument_number',
         'amount',
         'currency',
         'bank_name',

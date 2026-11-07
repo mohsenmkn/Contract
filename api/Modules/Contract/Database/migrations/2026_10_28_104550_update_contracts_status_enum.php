@@ -57,7 +57,6 @@ return new class extends Migration
                 'parent_contract_id',
                 'approved_by',
                 'approved_at',
-                'notified_at',
             ]);
         });
 

@@ -16,6 +16,7 @@ use Modules\Dashboard\App\Http\Controllers\DashboardController;
 */
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+    Route::get('/dashboard/unit', [DashboardController::class, 'unitDashboard']);
     Route::get('/dashboard/contract-stats', [DashboardController::class, 'contractStats']);
     Route::get('/dashboard/invoice-stats', [DashboardController::class, 'invoiceStats']);
     Route::get('/dashboard/contract-status-chart', [DashboardController::class, 'contractStatusChart']);

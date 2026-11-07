@@ -17,10 +17,9 @@ use Modules\Contract\App\Services\ContractWorkflowService;
 use Modules\Contract\App\Services\CreateContractService;
 use Modules\Contract\App\Services\UpdateContractService;
 use Modules\Contract\App\Services\ListContractsService;
-use Modules\Contract\App\Services\SendContractToContractorService;
 use Modules\Contract\App\Models\Contract;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Modules\Signature\App\Services\ExecutiveSignService;
+use Modules\Signature\App\Models\Signature;
 
 class ContractController extends Controller
 {
@@ -30,9 +29,8 @@ class ContractController extends Controller
         private CreateContractService $createService,
         private UpdateContractService $updateService,
         private ListContractsService $listService,
-        private SendContractToContractorService $sendToContractorService,
         private ContractWorkflowService $workflowService,
-        private ExecutiveSignService $executiveSignService,
+        private \Modules\Contract\App\Services\EmployerFrameworkService $employerFramework,
     ) {}
 
     public function index(ListContractsRequest $request): JsonResponse
@@ -82,16 +80,37 @@ class ContractController extends Controller
                 'creator',
                 'approver',
                 'items',
+                'items.employerContractItem',
+                'parentContract.items',
                 'amendments',
-                'signatures',
+                'signatures.signer',
+                'executiveSignatures.signer',
                 'alerts',
                 'invoices',
                 'guarantees'
             ])->findOrFail($id);
 
+            $employerContract = $contract->type === 'upstream'
+                ? $contract
+                : $contract->parentContract;
+            if ($employerContract) {
+                $excludeContractId = $contract->type === 'downstream' ? $contract->id : null;
+                $remaining = $this->employerFramework->remainingQuantities($employerContract, $excludeContractId);
+                foreach ($employerContract->items as $item) {
+                    $item->setAttribute('remaining_framework_quantity', $remaining[$item->id] ?? 0);
+                }
+                $employerContract->setAttribute(
+                    'remaining_framework_amount',
+                    $this->employerFramework->remainingAmount($employerContract, $excludeContractId),
+                );
+            }
+
             // ✅ بررسی دسترسی پیمانکار
             $user = auth()->user();
-            if ($user->isContractor() && $contract->party_id !== $user->party_id) {
+            if (!$user->can('contracts.read')) {
+                return response()->json(['success' => false, 'message' => 'شما اجازه مشاهده این قرارداد را ندارید.'], 403);
+            }
+            if (!$user->canAccessContract($contract)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'شما دسترسی به این قرارداد را ندارید.',
@@ -127,7 +146,7 @@ class ContractController extends Controller
 
             // ✅ بررسی دسترسی
             $user = auth()->user();
-            if ($user->isContractor() && $contract->party_id !== $user->party_id) {
+            if (!$user->canAccessContract($contract)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'شما دسترسی به این قرارداد را ندارید.',
@@ -167,7 +186,7 @@ class ContractController extends Controller
 
             // ✅ بررسی دسترسی
             $user = auth()->user();
-            if ($user->isContractor() && $contract->party_id !== $user->party_id) {
+            if (!$user->can('contracts.delete') || !$user->canAccessContract($contract)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'شما دسترسی به این قرارداد را ندارید.',
@@ -232,6 +251,30 @@ class ContractController extends Controller
 
     /**
      * ارسال قرارداد به پیمانکار برای امضا
+
+    public function returnToRequester(Request $request, $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'comments' => 'required|string|max:2000',
+        ]);
+
+        try {
+            $contract = Contract::findOrFail($id);
+            $contract = $this->workflowService->returnToRequester(
+                $contract,
+                auth()->user(),
+                $validated['comments']
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'قرارداد برای اصلاح به واحد درخواست‌کننده بازگردانده شد.',
+                'data' => new ContractResource($contract),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
 
     public function sendToContractor($id): JsonResponse
     {
@@ -301,6 +344,22 @@ class ContractController extends Controller
     /**
      * تنظیم پیش‌نویس حقوقی
      */
+    public function submitToContractReview($id): JsonResponse
+    {
+        try {
+            $contract = Contract::findOrFail($id);
+            $contract = $this->workflowService->submitToContractReview($contract, auth()->user());
+
+            return response()->json([
+                'success' => true,
+                'message' => 'قرارداد برای بررسی به واحد قراردادها ارسال شد.',
+                'data' => new ContractResource($contract),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
     public function legalDraft(Request $request, $id): JsonResponse
     {
         $validated = $request->validate([
@@ -313,7 +372,7 @@ class ContractController extends Controller
             $contract = $this->workflowService->createLegalDraft(
                 $contract,
                 auth()->user(),
-                $validated['content']
+                $validated
             );
 
             return response()->json([
@@ -326,6 +385,60 @@ class ContractController extends Controller
                 'success' => false,
                 'message' => $e->getMessage(),
             ], 400);
+        }
+    }
+
+    public function updateGuaranteeRequirement(Request $request, $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'requires_guarantee' => 'required|boolean',
+            'guarantee_type' => 'required_if:requires_guarantee,true|nullable|in:performance,advance_payment,bid,retention',
+            'guarantee_instrument_type' => 'required_if:requires_guarantee,true|nullable|in:check,promissory_note,bank_guarantee',
+            'requires_board_signature' => 'required|boolean',
+        ]);
+
+        try {
+            $contract = Contract::findOrFail($id);
+            $contract = $this->workflowService->updateGuaranteeRequirement(
+                $contract,
+                auth()->user(),
+                (bool) $validated['requires_guarantee'],
+                $validated['guarantee_type'] ?? null,
+                $validated['guarantee_instrument_type'] ?? null,
+                (bool) $validated['requires_board_signature']
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'نیاز به ضمانت قرارداد ذخیره شد.',
+                'data' => new ContractResource($contract),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function returnToRequester(Request $request, $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'comments' => 'required|string|max:2000',
+        ]);
+
+        try {
+            $contract = Contract::findOrFail($id);
+            $contract = $this->workflowService->returnToRequester(
+                $contract,
+                auth()->user(),
+                $validated['comments']
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'قرارداد برای اصلاح به واحد درخواست‌کننده بازگردانده شد.',
+                'data' => new ContractResource($contract),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
     }
 
@@ -412,13 +525,20 @@ class ContractController extends Controller
     {
         $contract = Contract::findOrFail($id);
         $user = auth()->user();
-
-        $canSign = $this->executiveSignService->canSign($contract, $user);
+        abort_unless($user->can('contracts.read'), 403);
+        $slot = Signature::awaitingUser($user)
+            ->where('signable_type', Contract::class)
+            ->where('signable_id', $contract->id)
+            ->where('group', 'executive')
+            ->first();
+        $canSign = $slot !== null;
 
         return response()->json([
             'success' => true,
             'data' => [
                 'can_sign' => $canSign,
+                'signature_id' => $slot?->id,
+                'requires_board_signature' => (bool) $contract->requires_board_signature,
                 'reason' => $canSign ? '' : 'شما مجاز به امضای این قرارداد نیستید.',
             ],
         ]);
@@ -427,11 +547,15 @@ class ContractController extends Controller
     /**
      * ابلاغ به پیمانکار
      */
-    public function notify($id): JsonResponse
+    public function notify(Request $request, $id): JsonResponse
     {
+        $validated = $request->validate([
+            'letter_body' => 'required|string|max:30000',
+        ]);
+
         try {
             $contract = Contract::findOrFail($id);
-            $contract = $this->workflowService->notifyContractor($contract, auth()->user());
+            $contract = $this->workflowService->notifyContractor($contract, auth()->user(), $validated['letter_body']);
 
             return response()->json([
                 'success' => true,
@@ -452,13 +576,25 @@ class ContractController extends Controller
 
     public function workflowHistory($id): JsonResponse
     {
+        $user = auth()->user();
+        abort_unless($user && !$user->hasRole('contractor') && $user->can('contracts.read'), 403);
         $contract = Contract::findOrFail($id);
+        abort_unless($user->canAccessContract($contract), 403);
 
         // دریافت تاریخچه از جدول audit_logs یا events
         $history = DB::table('contract_status_history')
             ->where('contract_id', $id)
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->leftJoin('users', 'contract_status_history.user_id', '=', 'users.id')
+            ->select('contract_status_history.*', 'users.name as actor_name')
+            ->orderBy('contract_status_history.created_at', 'desc')
+            ->get()
+            ->map(function ($item) {
+                $item->status_label = Contract::STATUSES[$item->to_status] ?? $item->to_status;
+                $item->title = $item->to_status === 'rejected_by_legal'
+                    ? 'رد توسط واحد حقوقی'
+                    : $item->status_label;
+                return $item;
+            });
 
         return response()->json([
             'success' => true,

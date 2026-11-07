@@ -11,6 +11,11 @@ class UpdateContractDTO
         public readonly ?string $endDate = null,
         public readonly ?array $items = null,
         public readonly ?string $description = null,
+        public readonly ?string $type = null,
+        public readonly ?string $content = null,
+        public readonly ?float $amount = null,
+        public readonly ?int $parentContractId = null,
+        public readonly bool $parentContractSpecified = false,
     ) {}
 
     public static function fromArray(array $data): self
@@ -22,6 +27,11 @@ class UpdateContractDTO
             endDate: $data['end_date'] ?? null,
             items: $data['items'] ?? null,
             description: $data['description'] ?? null,
+            type: $data['type'] ?? null,
+            content: $data['content'] ?? null,
+            amount: isset($data['amount']) ? (float) $data['amount'] : null,
+            parentContractId: isset($data['parent_contract_id']) ? (int) $data['parent_contract_id'] : null,
+            parentContractSpecified: array_key_exists('parent_contract_id', $data),
         );
     }
 }

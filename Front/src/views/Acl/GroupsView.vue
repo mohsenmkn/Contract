@@ -148,7 +148,7 @@
               <Tag
                   v-for="role in (slotProps.data.roles || []).slice(0, 2)"
                   :key="role.id"
-                  :value="role.name"
+                  :value="role.display_name || role.name"
                   severity="info"
                   class="text-xs"
               />
@@ -351,7 +351,7 @@
                   <div class="role-icon-wrapper">
                     <Shield class="role-icon" />
                   </div>
-                  <label class="role-label">{{ role.name }}</label>
+                  <label class="role-label">{{ role.display_name || role.name }}</label>
                 </div>
               </div>
             </div>

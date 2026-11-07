@@ -19,6 +19,7 @@ class GuaranteeController extends Controller
 
     public function index(Contract $contract): JsonResponse
     {
+        abort_unless(auth()->user()?->can('guarantees.read'), 403);
         $guarantees = $contract->guarantees()
             ->with(['creator'])
             ->orderBy('created_at', 'desc')
@@ -44,6 +45,7 @@ class GuaranteeController extends Controller
 
     public function show(Guarantee $guarantee): JsonResponse
     {
+        abort_unless(auth()->user()?->can('guarantees.read'), 403);
         $guarantee->load(['contract', 'creator']);
 
         return response()->json([
@@ -54,6 +56,7 @@ class GuaranteeController extends Controller
 
     public function release(Guarantee $guarantee): JsonResponse
     {
+        abort_unless(auth()->user()?->can('guarantees.release'), 403);
         if ($guarantee->status !== 'active') {
             return response()->json([
                 'success' => false,

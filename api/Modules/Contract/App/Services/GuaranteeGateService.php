@@ -8,9 +8,7 @@ use Modules\Auth\App\Models\User;
 use Modules\Contract\App\Models\Contract;
 
 /**
- * مرحله‌ی دریافت ضمانت (بین امضای پیمانکار و امضای واحد متقاضی).
- * کارشناس مالی با نقش guarantee_officer ضمانت را از طریق ماژول Guarantee ثبت می‌کند
- * (قبل از ثبت، assertCanManage را صدا بزنید) و سپس confirm دریافت را تأیید می‌کند.
+ * ثبت دریافت ضمانت توسط واحد مالی؛ این ثبت شرط ابلاغ است و گردش امضا را متوقف نمی‌کند.
  */
 class GuaranteeGateService
 {
@@ -26,24 +24,24 @@ class GuaranteeGateService
             throw new DomainException('این قرارداد نیاز به ضمانت ندارد.');
         }
 
-        if ($contract->status !== 'pending_guarantee') {
-            throw new DomainException('قرارداد در مرحله‌ی دریافت ضمانت نیست.');
+        if (!in_array($contract->status, ['pending_notification', 'pending_guarantee'], true)) {
+            throw new DomainException('ثبت ضمانت در این مرحله از قرارداد امکان‌پذیر نیست.');
         }
     }
 
     public function confirm(Contract $contract, User $user, ?string $comments = null): Contract
     {
-        return DB::transaction(function () use ($contract, $user, $comments) {
+        return DB::transaction(function () use ($contract, $user) {
             $locked = Contract::whereKey($contract->id)->lockForUpdate()->firstOrFail();
 
             $this->assertCanManage($locked, $user);
 
-            // اگر مدل Guarantee وضعیت دارد (مثلاً received)، این شرط را دقیق‌تر کنید
-            if (!$locked->guarantees()->exists()) {
+            if (!$locked->guarantees()->where('status', 'active')->exists()) {
                 throw new DomainException('ابتدا حداقل یک ضمانت برای قرارداد ثبت کنید.');
             }
 
-            return $locked->changeStatus('pending_unit_sign', $user, $comments ?: 'تأیید دریافت ضمانت');
+            // ثبت ضمانت توسط واحد مالی، خودِ تأیید دریافت فیزیکی است؛ وضعیت قرارداد تغییر نمی‌کند.
+            return $locked->fresh();
         });
     }
 }

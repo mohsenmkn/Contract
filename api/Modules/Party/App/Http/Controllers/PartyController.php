@@ -14,9 +14,9 @@ class PartyController extends Controller
     {
         $query = Party::query();
 
-        if ($request->has('role')) {
-            $query->where('role', $request->role);
-        }
+//        if ($request->has('role')) {
+//            $query->where('role', $request->role);
+//        }
 
         if ($request->has('search')) {
             $search = $request->search;

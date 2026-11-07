@@ -180,13 +180,19 @@ const userName = computed(() => {
 
 
 const userRole = computed(() => {
+  const roles = auth.user?.roles || []
+  const displayNames = auth.user?.role_display_names || {}
+  const labels = roles.map((role) => {
+    if (role && typeof role === 'object') {
+      return role.display_name || role.name
+    }
 
-  return (
-      auth.user?.role ||
-      auth.user?.roleName ||
-      'مدیر سیستم'
-  )
+    return displayNames[role] || role
+  }).filter(Boolean)
 
+  if (labels.length) return labels.join('، ')
+
+  return auth.user?.role || auth.user?.roleName || 'بدون نقش'
 })
 
 

@@ -53,47 +53,20 @@ export function useNumberFormatter() {
         const num = parseFloat(value)
         if (isNaN(num)) return '۰'
 
-        const absNum = Math.abs(num)
-        let formatted, unit
-
-        if (absNum >= 1_000_000_000_000) {
-            // تریلیون
-            formatted = (num / 1_000_000_000_000).toLocaleString('fa-IR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            })
-            unit = 'تریلیون'
-        } else if (absNum >= 1_000_000_000) {
-            // میلیارد
-            formatted = (num / 1_000_000_000).toLocaleString('fa-IR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            })
-            unit = 'میلیارد'
-        } else if (absNum >= 1_000_000) {
-            // میلیون
-            formatted = (num / 1_000_000).toLocaleString('fa-IR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            })
-            unit = 'میلیون'
-        } else if (absNum >= 1_000) {
-            // هزار
-            formatted = (num / 1_000).toLocaleString('fa-IR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            })
-            unit = 'هزار'
-        } else {
-            formatted = num.toLocaleString('fa-IR', {
+        const currencyLabel = currency === 'IRR' ? 'ریال' : 'تومان'
+        if (Math.abs(num) >= 1_000_000_000_000) {
+            const formatted = (num / 1_000_000_000_000).toLocaleString('fa-IR', {
                 minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
+                maximumFractionDigits: 2,
             })
-            unit = ''
+            return `${formatted} همت ${currencyLabel}`
         }
 
-        const currencyLabel = currency === 'IRR' ? 'ریال' : 'تومان'
-        return unit ? `${formatted} ${unit} ${currencyLabel}` : `${formatted} ${currencyLabel}`
+        const formatted = num.toLocaleString('fa-IR', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        })
+        return `${formatted} ${currencyLabel}`
     }
 
     // فرمت درصد

@@ -76,26 +76,50 @@ class Signature extends Model
     public function scopeAwaitingUser($query, User $user)
     {
         $roles = $user->getRoleNames()->all();
+        $unitRoles = array_values(array_intersect($roles, ['unit_head', 'unit_manager', 'unit_deputy']));
 
         return $query->where('signatures.status', 'pending')
-            ->where(function ($q) use ($roles) {
+            ->where(function ($q) use ($roles, $user) {
+                $q->where(function ($legacy) use ($user) {
+                    $legacy->whereNull('signatures.group')->where('signatures.signer_id', $user->id);
+                });
                 foreach ($roles as $role) {
                     $q->orWhereJsonContains('signatures.allowed_roles', $role);
                 }
             })
-            ->whereExists(function ($sub) use ($user) {
-                $sub->selectRaw('1')
-                    ->from('contracts')
-                    ->whereColumn('contracts.id', 'signatures.signable_id')
-                    ->whereNull('contracts.deleted_at')
-                    ->where(function ($c) use ($user) {
-                        $c->where('signatures.group', '!=', 'unit')
-                          ->orWhere('contracts.unit_id', $user->unit_id);
-                    })
-                    ->where(function ($c) use ($user) {
-                        $c->where('signatures.group', '!=', 'contractor')
-                          ->orWhere('contracts.party_id', $user->party_id);
-                    });
+            ->where(function ($accessible) use ($user, $unitRoles) {
+                $accessible->where(function ($contract) use ($user, $unitRoles) {
+                    $contract->where('signatures.signable_type', \Modules\Contract\App\Models\Contract::class)
+                        ->whereExists(function ($sub) use ($user, $unitRoles) {
+                            $sub->selectRaw('1')
+                                ->from('contracts')
+                                ->whereColumn('contracts.id', 'signatures.signable_id')
+                                ->whereNull('contracts.deleted_at')
+                                ->where(function ($scope) use ($user, $unitRoles) {
+                                    $scope->whereNull('signatures.group')
+                                        ->orWhere(function ($grouped) use ($user, $unitRoles) {
+                                            $grouped->where(function ($unitGroup) use ($user, $unitRoles) {
+                                                $unitGroup->where('signatures.group', '!=', 'unit')
+                                                    ->orWhereExists(function ($unit) use ($user, $unitRoles) {
+                                                        $unit->selectRaw('1')
+                                                            ->from('contract_unit_signers')
+                                                            ->whereColumn('contract_unit_signers.unit_id', 'contracts.unit_id')
+                                                            ->where('contract_unit_signers.user_id', $user->id)
+                                                            ->whereIn('contract_unit_signers.unit_role', $unitRoles)
+                                                            ->whereRaw('JSON_CONTAINS(signatures.allowed_roles, JSON_QUOTE(contract_unit_signers.unit_role))');
+                                                    });
+                                            })->where(function ($partyGroup) use ($user) {
+                                                $partyGroup->where('signatures.group', '!=', 'contractor')
+                                                    ->orWhere('contracts.party_id', $user->party_id);
+                                            });
+                                        });
+                                });
+                        });
+                })->orWhere(function ($legacyOther) use ($user) {
+                    $legacyOther->where('signatures.signable_type', '!=', \Modules\Contract\App\Models\Contract::class)
+                        ->whereNull('signatures.group')
+                        ->where('signatures.signer_id', $user->id);
+                });
             });
     }
 

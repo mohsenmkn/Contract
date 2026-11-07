@@ -9,7 +9,7 @@ import { useAuthStore } from '@/stores/auth.js'
 import { useDateFormatter } from '@/composables/useDateFormatter'
 import {
   FileEdit, CheckCircle, XCircle, Send, FileText, User, Calendar,
-  Building2, AlertCircle, History, Clock
+  Building2, AlertCircle, History, Clock, Info
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -264,23 +264,48 @@ const handleReturnToRequester = async () => {
         </div>
       </div>
 
-      <div class="border border-slate-300 rounded-lg overflow-hidden">
+      <div class="legal-editor-shell">
         <Editor
             v-model="reviewForm.content"
+            class="legal-editor"
             editorStyle="height: 500px"
-            :modules="{
-            toolbar: [
-              [{ 'header': [1, 2, 3, false] }],
-              ['bold', 'italic', 'underline', 'strike'],
-              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-              [{ 'indent': '-1'}, { 'indent': '+1' }],
-              [{ 'color': [] }, { 'background': [] }],
-              [{ 'align': [] }],
-              ['link', 'image'],
-              ['clean']
-            ]
-          }"
-        />
+        >
+          <template #toolbar>
+            <span class="ql-formats">
+              <select class="ql-header" aria-label="سبک عنوان">
+                <option value="1">عنوان ۱</option>
+                <option value="2">عنوان ۲</option>
+                <option value="3">عنوان ۳</option>
+                <option selected>متن عادی</option>
+              </select>
+            </span>
+            <span class="ql-formats">
+              <button class="ql-bold" aria-label="ضخیم"></button>
+              <button class="ql-italic" aria-label="مورب"></button>
+              <button class="ql-underline" aria-label="زیرخط"></button>
+              <button class="ql-strike" aria-label="خط‌خورده"></button>
+            </span>
+            <span class="ql-formats">
+              <button class="ql-list" value="ordered" aria-label="فهرست شماره‌ای"></button>
+              <button class="ql-list" value="bullet" aria-label="فهرست نشانه‌ای"></button>
+              <button class="ql-indent" value="-1" aria-label="کاهش تورفتگی"></button>
+              <button class="ql-indent" value="+1" aria-label="افزایش تورفتگی"></button>
+            </span>
+            <span class="ql-formats">
+              <select class="ql-color" aria-label="رنگ متن"></select>
+              <select class="ql-background" aria-label="رنگ زمینه"></select>
+            </span>
+            <span class="ql-formats">
+              <select class="ql-align" aria-label="تراز متن"></select>
+              <button class="ql-direction" value="rtl" aria-label="راست‌چین"></button>
+            </span>
+            <span class="ql-formats">
+              <button class="ql-link" aria-label="افزودن پیوند"></button>
+              <button class="ql-image" aria-label="افزودن تصویر"></button>
+              <button class="ql-clean" aria-label="پاک‌کردن قالب‌بندی"></button>
+            </span>
+          </template>
+        </Editor>
       </div>
 
       <div v-if="reviewForm.content" class="flex items-center gap-4 text-xs text-surface-500 mt-3">
@@ -398,203 +423,214 @@ const handleReturnToRequester = async () => {
 </template>
 
 <style scoped>
+.legal-review-panel {
+  --legal-primary: #164e8a;
+  --legal-primary-dark: #0f3158;
+  --legal-accent: #8b5cf6;
+  --legal-border: #dbe4ef;
+  --legal-muted: #64748b;
+  color: #1e293b;
+  direction: rtl;
+}
+.legal-review-panel > div {
+  transition: box-shadow .2s ease, border-color .2s ease;
+}
+.legal-review-panel > div.bg-white {
+  background: linear-gradient(145deg, #ffffff 0%, #fbfdff 100%);
+  border-color: var(--legal-border);
+  box-shadow: 0 8px 24px rgba(15, 49, 88, .055);
+}
+.legal-review-panel > div.bg-white:first-child {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border-top: 4px solid var(--legal-primary);
+}
+.legal-review-panel > div.bg-white:first-child::after {
+  content: "";
+  position: absolute;
+  width: 190px;
+  height: 190px;
+  left: -90px;
+  top: -110px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(59,130,246,.12), transparent 70%);
+  pointer-events: none;
+}
+.legal-review-panel h2,
+.legal-review-panel h3 { letter-spacing: -.02em; }
+.legal-review-panel h2 { color: var(--legal-primary-dark); }
+.legal-review-panel h3 {
+  padding-bottom: .8rem;
+  border-bottom: 1px solid #e8eef5;
+}
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
 }
-
 .info-card {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: .85rem;
+  min-width: 0;
   padding: 1rem;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border-radius: 14px;
+  border: 1px solid #e2eaf3;
+  background: linear-gradient(135deg, #f8fbff, #f1f6fc);
+  transition: transform .18s ease, box-shadow .18s ease;
 }
-
+.info-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(30, 64, 110, .07);
+}
 .info-icon-wrapper {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
-  background: #dbeafe;
+  border-radius: 13px;
+  background: linear-gradient(145deg, #e1edff, #d3e4ff);
   flex-shrink: 0;
 }
-
-.info-icon {
-  width: 18px;
-  height: 18px;
-  color: #2563eb;
-}
-
-.info-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.info-label {
-  font-size: 0.75rem;
-  color: #64748b;
-  margin-bottom: 0.25rem;
-}
-
+.info-icon { width: 20px; height: 20px; color: #2563a6; }
+.info-content { flex: 1; min-width: 0; }
+.info-label { font-size: .75rem; color: var(--legal-muted); margin-bottom: .35rem; }
 .info-value {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #1e293b;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: .9rem;
+  font-weight: 700;
+  color: #1e3552;
+  overflow-wrap: anywhere;
 }
-
-/* Info Banner */
 .info-banner {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1rem;
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  border: 1px solid #fbbf24;
-  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  background: linear-gradient(135deg, #fff9e9, #fff3d3);
+  border: 1px solid #f2d48b;
+  border-radius: 14px;
 }
-
 .info-banner-icon {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f59e0b;
+  background: #e6a323;
   color: white;
-  border-radius: 10px;
+  border-radius: 12px;
+  flex-shrink: 0;
 }
-
-.info-banner-icon.warn {
-  background: #f59e0b;
+.info-banner-content { flex: 1; }
+.info-banner-title { font-weight: 800; color: #7c4a03; font-size: .95rem; }
+.info-banner-subtitle { font-size: .83rem; color: #805d25; margin-top: .2rem; line-height: 1.9; }
+.legal-editor-shell {
+  overflow: hidden;
+  border: 1px solid #cbd8e7;
+  border-radius: 15px;
+  background: white;
+  box-shadow: 0 5px 18px rgba(15, 49, 88, .045);
 }
-
-.info-banner-content {
-  flex: 1;
-}
-
-.info-banner-title {
-  font-weight: 700;
-  color: #1e293b;
-  font-size: 0.95rem;
-}
-
-.info-banner-subtitle {
-  font-size: 0.8rem;
-  color: #64748b;
-  margin-top: 0.15rem;
-}
-
-/* Form */
-.form-group {
+.legal-editor :deep(.p-editor-toolbar),
+.legal-editor :deep(.ql-toolbar) {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .25rem;
+  padding: .7rem .8rem;
+  background: linear-gradient(180deg, #f8fbff, #eef4fa);
+  border: 0;
+  border-bottom: 1px solid #dce6f0;
 }
-
+.legal-editor :deep(.ql-toolbar .ql-formats) {
+  margin: .15rem .25rem;
+  padding-left: .5rem;
+  border-left: 1px solid #d7e1ed;
+}
+.legal-editor :deep(.ql-toolbar button),
+.legal-editor :deep(.ql-toolbar select) { border-radius: 6px; }
+.legal-editor :deep(.ql-toolbar button:hover) { background: #e0ecfb; }
+.legal-editor :deep(.ql-container) { border: 0; font-family: inherit; font-size: 14px; }
+.legal-editor :deep(.ql-editor) {
+  min-height: 500px;
+  padding: 1.5rem 1.7rem;
+  color: #25364b;
+  line-height: 2.15;
+  text-align: justify;
+  direction: rtl;
+}
+.legal-editor :deep(.ql-editor.ql-blank::before) {
+  right: 1.7rem;
+  left: auto;
+  color: #94a3b8;
+  font-style: normal;
+}
+.form-group { display: flex; flex-direction: column; gap: .55rem; }
 .form-label {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #475569;
+  gap: .5rem;
+  font-size: .875rem;
+  font-weight: 700;
+  color: #334155;
 }
-
-.label-icon {
-  width: 16px;
-  height: 16px;
-  color: #3b82f6;
+.label-icon { width: 16px; height: 16px; color: #3b82f6; }
+.form-input { width: 100%; }
+.form-group :deep(textarea) {
+  border-radius: 12px;
+  border-color: #d5e0ec;
+  line-height: 1.9;
 }
-
-.form-input {
-  width: 100%;
+.form-group :deep(textarea:focus) {
+  border-color: #6b9dd5;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, .12);
 }
-
-/* Actions */
 .actions-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .85rem;
 }
-
-.action-btn {
-  width: 100%;
-  min-height: 48px;
-}
-
+.action-btn { width: 100%; min-height: 48px; border-radius: 12px; }
 .action-btn.primary {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: linear-gradient(135deg, #10b981, #047857);
   border: none;
+  box-shadow: 0 5px 12px rgba(5, 150, 105, .18);
 }
-
-/* Contract Content */
 .contract-content {
-  line-height: 2;
+  line-height: 2.1;
   font-size: 14px;
+  background: #f8fbff;
+  border-radius: 14px;
 }
-
 .contract-content :deep(h1),
 .contract-content :deep(h2),
 .contract-content :deep(h3) {
   margin-top: 1.5rem;
-  margin-bottom: 0.75rem;
-  color: #0f172a;
-  font-weight: 700;
+  margin-bottom: .75rem;
+  color: #0f3158;
+  font-weight: 800;
 }
-
-.contract-content :deep(p) {
-  margin-bottom: 1rem;
-  text-align: justify;
-  line-height: 2;
-}
-
+.contract-content :deep(p) { margin-bottom: 1rem; text-align: justify; line-height: 2.1; }
 .contract-content :deep(ul),
-.contract-content :deep(ol) {
-  margin-bottom: 1rem;
-  padding-right: 2rem;
-}
-
-.contract-content :deep(li) {
-  margin-bottom: 0.5rem;
-}
-
-/* Timeline */
-.timeline {
-  position: relative;
-  padding-right: 20px;
-}
-
+.contract-content :deep(ol) { margin-bottom: 1rem; padding-right: 2rem; }
+.contract-content :deep(li) { margin-bottom: .5rem; }
+.timeline { position: relative; padding-right: 22px; }
 .timeline::before {
-  content: '';
+  content: "";
   position: absolute;
   right: 7px;
-  top: 0;
-  bottom: 0;
+  top: 5px;
+  bottom: 5px;
   width: 2px;
-  background: #e2e8f0;
+  background: linear-gradient(#93c5fd, #dbeafe);
 }
-
-.timeline-item {
-  position: relative;
-  padding-bottom: 1.5rem;
-}
-
-.timeline-item:last-child {
-  padding-bottom: 0;
-}
-
+.timeline-item { position: relative; padding-bottom: 1.5rem; }
+.timeline-item:last-child { padding-bottom: 0; }
 .timeline-dot {
   position: absolute;
-  right: -20px;
+  right: -22px;
   top: 4px;
   width: 16px;
   height: 16px;
@@ -602,83 +638,55 @@ const handleReturnToRequester = async () => {
   border: 3px solid white;
   box-shadow: 0 0 0 2px currentColor;
 }
-
-.timeline-dot.blue {
-  background: #3b82f6;
-  color: #3b82f6;
-}
-
-.timeline-dot.green {
-  background: #10b981;
-  color: #10b981;
-}
-
-.timeline-dot.orange {
-  background: #f59e0b;
-  color: #f59e0b;
-}
-
-.timeline-dot.red {
-  background: #ef4444;
-  color: #ef4444;
-}
-
+.timeline-dot.blue { background: #3b82f6; color: #3b82f6; }
+.timeline-dot.green { background: #10b981; color: #10b981; }
+.timeline-dot.orange { background: #f59e0b; color: #f59e0b; }
+.timeline-dot.red { background: #ef4444; color: #ef4444; }
 .timeline-content {
-  padding-right: 1rem;
+  padding: .9rem 1rem;
+  border: 1px solid #e5edf5;
+  border-radius: 12px;
+  background: #fbfdff;
 }
-
 .timeline-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.25rem;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-bottom: .35rem;
 }
-
-.timeline-title {
-  font-weight: 600;
-  font-size: 0.875rem;
-  color: #1e293b;
-}
-
-.timeline-date {
-  font-size: 0.75rem;
-  color: #64748b;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.timeline-actor {
-  font-size: 0.75rem;
-  color: #64748b;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  margin-bottom: 0.25rem;
-}
-
+.timeline-title { font-weight: 800; font-size: .9rem; color: #1e3552; }
+.timeline-date { font-size: .75rem; color: #64748b; display: flex; align-items: center; gap: .25rem; }
+.timeline-actor { font-size: .78rem; color: #64748b; display: flex; align-items: center; gap: .25rem; margin-bottom: .25rem; }
 .timeline-comments {
-  font-size: 0.8rem;
+  font-size: .82rem;
   color: #475569;
-  background: #f8fafc;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
+  background: #f1f6fc;
+  padding: .65rem .8rem;
+  border-radius: 8px;
   border-right: 3px solid #3b82f6;
-  margin-top: 0.5rem;
+  margin-top: .6rem;
+  line-height: 1.9;
 }
-
 .empty-state {
   text-align: center;
-  padding: 2rem 1rem;
+  padding: 2.5rem 1rem;
   color: #94a3b8;
+  border: 1px dashed #cbd8e7;
+  border-radius: 14px;
+  background: #f8fbff;
 }
-
 @media (max-width: 768px) {
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
-  .actions-grid {
-    grid-template-columns: 1fr;
-  }
+  .info-grid, .actions-grid { grid-template-columns: 1fr; }
+  .legal-editor :deep(.ql-editor) { padding: 1rem; min-height: 380px; }
+  .legal-review-panel > div.bg-white { padding: 1rem; }
+  .timeline-header { align-items: flex-start; }
+}
+@media print {
+  .legal-review-panel .actions-grid,
+  .legal-review-panel .legal-editor-shell,
+  .legal-review-panel .info-banner { display: none !important; }
+  .legal-review-panel > div.bg-white { box-shadow: none; break-inside: avoid; }
 }
 </style>

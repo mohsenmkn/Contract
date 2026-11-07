@@ -9,6 +9,7 @@ class ContractItem extends Model
 {
     protected $fillable = [
         'contract_id',
+        'employer_contract_item_id',
         'item_code',
         'description',
         'unit',
@@ -28,5 +29,10 @@ class ContractItem extends Model
     public function contract(): BelongsTo
     {
         return $this->belongsTo(Contract::class);
+    }
+
+    public function employerContractItem(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'employer_contract_item_id');
     }
 }

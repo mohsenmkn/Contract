@@ -24,67 +24,84 @@ class SmsService
      * @param int $templateId شناسه قالب پیامک
      * @return array ['success' => bool, 'message' => string, 'reference_id' => ?string]
      */
-    public function sendTemplateSms(string $mobile, array $parameters, int $templateId): array
-    {
-        if (empty($this->apiKey)) {
-            Log::warning('SMS API key not configured');
+
+    public function sendTemplateSms(
+        string $mobile,
+        array $parameters,
+        int $templateId
+    ): array {
+        $apiKey = (string) config('services.msgway.api_key');
+
+        if ($apiKey === '') {
+            Log::error('Msgway API key is not configured.');
+
             return [
                 'success' => false,
                 'message' => 'سرویس پیامک پیکربندی نشده است.',
             ];
         }
 
+        $params = [
+            'mobile' => $mobile,
+            'method' => 'sms',
+            'provider' => (int) config('services.msgway.provider', 0),
+            'templateID' => $templateId,
+            'params' => array_values($parameters),
+        ];
+
         try {
-            $response = Http::timeout(10)
+            $response = Http::timeout(15)
                 ->withHeaders([
-                    'Authorization' => "Bearer {$this->apiKey}",
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'application/json',
+                    'apiKey' => $apiKey,
                 ])
-                ->post("{$this->baseUrl}", [
-                    'mobile' => $mobile,
-                    'templateId' => 23490, // بعدا تمپلیت بساز و تغییرش بده
-                    'inputs' => $parameters,
-                ]);
+                ->post('https://api.msgway.com/send', $params);
 
-            if ($response->successful()) {
-                $data = $response->json();
-                return [
-                    'success' => true,
-                    'message' => 'پیامک با موفقیت ارسال شد.',
-                    'reference_id' => $data['referenceId'] ?? null,
-                ];
-            }
+        } catch (\Throwable $e) {
+            Log::error("SMS request failed for {$mobile}: {$e->getMessage()}");
 
-            Log::error('SMS send failed', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
-
-            return [
-                'success' => false,
-                'message' => 'خطا در ارسال پیامک: ' . ($response->json('message') ?? 'نامشخص'),
-            ];
-
-        } catch (\Exception $e) {
-            Log::error('SMS exception', ['error' => $e->getMessage()]);
             return [
                 'success' => false,
                 'message' => 'خطا در ارتباط با سرویس پیامک.',
             ];
         }
+
+        Log::info("SMS Response for {$mobile} (HTTP {$response->status()}): " . $response->body());
+
+        if ($response->successful()) {
+            $data = $response->json() ?? [];
+
+            return [
+                'success' => true,
+                'message' => 'درخواست ارسال پیامک با موفقیت ثبت شد.',
+                'reference_id' => $data['referenceId']
+                    ?? $data['reference_id']
+                    ?? null,
+            ];
+        }
+
+        Log::error('Msgway SMS send failed', [
+            'status' => $response->status(),
+            'body' => $response->body(),
+        ]);
+
+        return [
+            'success' => false,
+            'message' => 'خطا در ارسال پیامک: '
+                . ($response->json('message') ?? $response->body()),
+        ];
     }
+
 
     /**
      * ارسال کد OTP به پیمانکار
      */
-    public function sendOtpCode(string $mobile, string $code, int $expiryMinutes = 5, ?int $templateId = null): array
+    public function sendOtpCode(string $mobile, string $fullName, string $code, ?int $templateId = null): array
     {
-        $templateId = $templateId ?? (int) config('services.msgway.template_id_default', 0);
+        $templateId = $templateId ?? (int) config('services.msgway.template_id_signature', 25370);
 
         return $this->sendTemplateSms($mobile, [
-            'code' => $code,
-            'expiry' => (string) $expiryMinutes,
+            $fullName,
+            $code,
         ], $templateId);
     }
 }

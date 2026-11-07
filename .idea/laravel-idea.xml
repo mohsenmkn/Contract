@@ -8,6 +8,7 @@
   <component name="LaravelIdeaMainSettings">
     <option name="frameworkFound" value="true" />
     <option name="laravelBasePath" value="api" />
+    <option name="moduleSystemName" value="nwidart/laravel-modules" />
     <option name="translation">
       <LaravelTranslation>
         <option name="defaultLanguageFromConfig" value="fa" />

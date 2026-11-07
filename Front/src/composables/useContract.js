@@ -10,19 +10,27 @@ export function useContract() {
 
     // لیست وضعیت‌های قرارداد
     const contractStatuses = [
-        { value: 'draft', label: 'پیش‌نویس', color: 'secondary', icon: 'pi-file-edit' },
-        { value: 'pending_internal_approval', label: 'در انتظار تایید داخلی', color: 'warn', icon: 'pi-clock' },
-        { value: 'pending_contractor_sign', label: 'در انتظار امضای پیمانکار', color: 'info', icon: 'pi-signature' },
-        { value: 'active', label: 'فعال', color: 'success', icon: 'pi-check-circle' },
-        { value: 'expiring', label: 'در حال اتمام', color: 'warn', icon: 'pi-exclamation-triangle' },
-        { value: 'completed', label: 'خاتمه یافته', color: 'secondary', icon: 'pi-flag' },
-        { value: 'terminated', label: 'فسخ شده', color: 'danger', icon: 'pi-times-circle' },
+        { value: 'pending_contract_review', label: 'در انتظار بررسی واحد قراردادها', color: 'warn', icon: 'pi pi-briefcase' },
+        { value: 'draft', label: 'پیش‌نویس', color: 'secondary', icon: 'pi pi-file-edit' },
+        { value: 'pending_legal_review', label: 'در انتظار بررسی حقوقی', color: 'warn', icon: 'pi pi-gavel' },
+        { value: 'legal_draft', label: 'پیش‌نویس حقوقی', color: 'info', icon: 'pi pi-file-edit' },
+        { value: 'rejected_by_legal', label: 'رد شده توسط حقوقی', color: 'danger', icon: 'pi pi-times-circle' },
+        { value: 'pending_contractor_sign', label: 'در انتظار امضای پیمانکار', color: 'info', icon: 'pi pi-signature' },
+        { value: 'pending_guarantee', label: 'در انتظار دریافت ضمانت', color: 'warn', icon: 'pi pi-shield' },
+        { value: 'pending_unit_sign', label: 'در انتظار امضای واحد متقاضی', color: 'warn', icon: 'pi pi-users' },
+        { value: 'pending_legal_sign', label: 'در انتظار امضای حقوقی', color: 'warn', icon: 'pi pi-briefcase' },
+        { value: 'pending_executive_sign', label: 'در انتظار امضای نهایی', color: 'warn', icon: 'pi pi-user-tie' },
+        { value: 'pending_notification', label: 'در انتظار ابلاغ', color: 'info', icon: 'pi pi-send' },
+        { value: 'active', label: 'فعال', color: 'success', icon: 'pi pi-check-circle' },
+        { value: 'expiring', label: 'در حال اتمام', color: 'warn', icon: 'pi pi-exclamation-triangle' },
+        { value: 'completed', label: 'خاتمه یافته', color: 'secondary', icon: 'pi pi-flag' },
+        { value: 'terminated', label: 'فسخ شده', color: 'danger', icon: 'pi pi-times-circle' },
     ]
 
     // لیست انواع قرارداد
     const contractTypes = [
-        { value: 'upstream', label: 'بالادستی (کارفرما)', icon: 'pi-arrow-up' },
-        { value: 'downstream', label: 'پایین‌دستی (پیمانکار)', icon: 'pi-arrow-down' },
+        { value: 'upstream', label: 'کارفرما', icon: 'pi pi-building' },
+        { value: 'downstream', label: 'پیمانکار', icon: 'pi pi-briefcase' },
     ]
 
     // دریافت اطلاعات وضعیت

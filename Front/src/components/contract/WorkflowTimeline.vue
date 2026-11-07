@@ -15,10 +15,14 @@ const workflowSteps = [
   { key: 'pending_legal_review', label: 'بررسی حقوقی', icon: 'pi pi-gavel', actor: 'واحد حقوقی' },
   { key: 'legal_draft', label: 'پیش‌نویس حقوقی', icon: 'pi pi-file', actor: 'کارشناس حقوقی' },
   { key: 'pending_contractor_sign', label: 'امضای پیمانکار', icon: 'pi pi-signature', actor: 'پیمانکار' },
-  { key: 'pending_executive_sign', label: 'امضای اجرایی', icon: 'pi pi-user-tie', actor: 'مدیرعامل/معاون/هیئت مدیره' },
+  { key: 'pending_unit_sign', label: 'امضای واحد متقاضی', icon: 'pi pi-users', actor: 'مدیر/رئیس/معاون واحد' },
+  { key: 'pending_legal_sign', label: 'امضای حقوقی', icon: 'pi pi-briefcase', actor: 'واحد حقوقی' },
+  { key: 'pending_executive_sign', label: 'امضای نهایی', icon: 'pi pi-user-tie', actor: 'مدیرعامل و در صورت نیاز عضو هیئت‌مدیره' },
   { key: 'pending_notification', label: 'ابلاغ', icon: 'pi pi-send', actor: 'واحد حقوقی' },
   { key: 'active', label: 'فعال', icon: 'pi pi-check-circle', actor: 'سیستم' },
 ]
+
+workflowSteps.splice(1, 0, { key: 'pending_contract_review', label: 'بررسی واحد قراردادها', icon: 'pi pi-briefcase', actor: 'واحد قراردادها' })
 
 const currentStepIndex = computed(() => {
   return workflowSteps.findIndex(s => s.key === props.status)

@@ -1,8 +1,9 @@
 <!-- src/components/contract/ContractTimeline.vue -->
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import EmptyState from './EmptyState.vue'
 import { useDateFormatter } from '@/composables/useDateFormatter'
+import api from '@/api/axios.js'
 
 const props = defineProps({
   contract: { type: Object, default: null },
@@ -11,6 +12,29 @@ const props = defineProps({
 })
 
 const { toJalaliDateTime } = useDateFormatter()
+const workflowHistory = ref([])
+
+const localizeWorkflowComment = (comment = '') => comment.replace(
+  /تکمیل امضاهای فاز\s+(contractor|unit|legal|executive)/gi,
+  (_, phase) => `تکمیل امضاهای مرحلهٔ ${{ contractor: 'پیمانکار', unit: 'واحد متقاضی', legal: 'حقوقی', executive: 'مدیران مجاز' }[phase.toLowerCase()]}`,
+)
+
+watch(() => props.contract?.id, async (contractId) => {
+  workflowHistory.value = []
+  if (!contractId) return
+  try {
+    const response = await api.get(`/contracts/${contractId}/workflow-history`)
+    workflowHistory.value = (response.data?.data || []).map(item => ({
+      title: item.title || item.status_label || item.to_status,
+      description: [item.actor_name ? `توسط ${item.actor_name}` : '', localizeWorkflowComment(item.comments || '')].filter(Boolean).join(' — '),
+      date: item.created_at,
+      icon: item.to_status === 'rejected_by_legal' ? 'pi pi-times-circle' : 'pi pi-history',
+      color: item.to_status === 'rejected_by_legal' ? 'bg-red-500' : 'bg-blue-500',
+    }))
+  } catch (error) {
+    console.error('Failed to load contract workflow history', error)
+  }
+}, { immediate: true })
 
 const items = computed(() => {
   if (props.activities.length) {
@@ -27,6 +51,8 @@ const items = computed(() => {
   if (!c) return []
 
   const list = []
+
+  list.push(...workflowHistory.value)
 
   list.push({
     title: 'ایجاد قرارداد',
@@ -67,9 +93,11 @@ const items = computed(() => {
   })
 
   ;(c.signatures || []).filter(s => s.signed_at).forEach(s => {
+    const signerName = s.signer?.name || 'نام امضاکننده ثبت نشده'
+    const signerRole = s.role_label || (s.signer_type === 'contractor' ? 'پیمانکار' : 'امضاکننده داخلی')
     list.push({
-      title: s.signer_type === 'contractor' ? 'امضای پیمانکار' : 'امضای داخلی',
-      description: s.signer?.name || '',
+      title: `امضای ${signerRole}`,
+      description: `${signerName} این قرارداد را امضا کرد.`,
       date: s.signed_at,
       icon: 'pi pi-signature',
       color: 'bg-teal-500',

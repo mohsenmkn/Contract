@@ -33,6 +33,9 @@ class Contract extends Model
         'pages_count',
         'content_version',
         'requires_guarantee',
+        'guarantee_type',
+        'guarantee_instrument_type',
+        'requires_board_signature',
         'unit_id',
         'requesting_user_id',
         'parent_contract_id',
@@ -40,6 +43,7 @@ class Contract extends Model
         'approved_by',
         'approved_at',
         'notified_at',
+        'notification_letter_data',
     ];
 
     protected $casts = [
@@ -47,18 +51,22 @@ class Contract extends Model
         'end_date' => 'date',
         'approved_at' => 'datetime',
         'notified_at' => 'datetime',
+        'notification_letter_data' => 'array',
         'initial_amount' => 'decimal:2',
         'current_amount' => 'decimal:2',
         'requires_guarantee' => 'boolean',
+        'requires_board_signature' => 'boolean',
     ];
 
     // ═══════════════════════════════════════════════════════
     // وضعیت‌های مجاز و برچسب‌های فارسی
     // ═══════════════════════════════════════════════════════
     const STATUSES = [
+        'pending_contract_review' => 'در انتظار بررسی واحد قراردادها',
         'draft' => 'پیش‌نویس',
         'pending_legal_review' => 'در انتظار بررسی حقوقی',
         'legal_draft' => 'پیش‌نویس حقوقی',
+        'rejected_by_legal' => 'رد شده توسط حقوقی',
         'pending_contractor_sign' => 'در انتظار امضای پیمانکار',
         'pending_guarantee' => 'در انتظار دریافت ضمانت',
         'pending_unit_sign' => 'در انتظار امضای واحد متقاضی',
@@ -75,11 +83,13 @@ class Contract extends Model
     // قوانین ترنزیشن (چه وضعیتی به چه وضعیتی می‌تواند برود)
     // ═══════════════════════════════════════════════════════
     const TRANSITIONS = [
-        'draft' => ['pending_legal_review', 'terminated'],
-        'pending_legal_review' => ['legal_draft', 'draft', 'terminated'],
-        'legal_draft' => ['pending_contractor_sign', 'pending_legal_review', 'terminated'],
-        // پس از امضای پیمانکار: اگر ضمانت لازم است pending_guarantee، وگرنه مستقیم واحد متقاضی
-        'pending_contractor_sign' => ['pending_guarantee', 'pending_unit_sign', 'legal_draft', 'terminated'],
+        'draft' => ['pending_contract_review', 'pending_legal_review', 'terminated'],
+        'pending_contract_review' => ['pending_legal_review', 'draft', 'terminated'],
+        'pending_legal_review' => ['legal_draft', 'draft', 'rejected_by_legal', 'terminated'],
+        'legal_draft' => ['pending_contractor_sign', 'pending_legal_review', 'draft', 'rejected_by_legal', 'terminated'],
+        'rejected_by_legal' => ['pending_contract_review', 'draft', 'terminated'],
+        // پس از امضای پیمانکار گردش ادامه پیدا می‌کند؛ ضمانت فقط پیش‌شرط ابلاغ نهایی است.
+        'pending_contractor_sign' => ['pending_unit_sign', 'legal_draft', 'terminated'],
         'pending_guarantee' => ['pending_unit_sign', 'legal_draft', 'terminated'],
         'pending_unit_sign' => ['pending_legal_sign', 'legal_draft', 'terminated'],
         'pending_legal_sign' => ['pending_executive_sign', 'pending_unit_sign', 'legal_draft', 'terminated'],
@@ -92,7 +102,7 @@ class Contract extends Model
     ];
 
     // فقط در این وضعیت‌ها متن، آیتم‌ها و مبلغ قابل ویرایش است
-    const EDITABLE_STATUSES = ['draft', 'pending_legal_review', 'legal_draft'];
+    const EDITABLE_STATUSES = ['draft', 'pending_contract_review', 'pending_legal_review', 'legal_draft', 'rejected_by_legal'];
 
     public function isContentEditable(): bool
     {
@@ -160,8 +170,10 @@ class Contract extends Model
     {
         return match ($this->status) {
             'draft' => 'secondary',
+            'pending_contract_review' => 'warn',
             'pending_legal_review' => 'warn',
             'legal_draft' => 'info',
+            'rejected_by_legal' => 'danger',
             'pending_contractor_sign' => 'warn',
             'pending_guarantee' => 'warn',
             'pending_unit_sign' => 'warn',
@@ -185,6 +197,7 @@ class Contract extends Model
             'draft' => 'pi pi-file',
             'pending_legal_review' => 'pi pi-clock',
             'legal_draft' => 'pi pi-file-edit',
+            'rejected_by_legal' => 'pi pi-times-circle',
             'pending_contractor_sign' => 'pi pi-signature',
             'pending_guarantee' => 'pi pi-shield',
             'pending_unit_sign' => 'pi pi-users',
@@ -319,6 +332,45 @@ class Contract extends Model
         return $this->type === 'downstream';
     }
 
+    public function hasContent(): bool
+    {
+        return trim(strip_tags((string) $this->content)) !== '';
+    }
+
+    public function calculatePagesCount(): int
+    {
+        if (!$this->hasContent()) {
+            return 0;
+        }
+
+        return max(1, (int) ceil(mb_strlen(strip_tags((string) $this->content), 'UTF-8') / 1500));
+    }
+
+    public function getContentSummary(int $limit = 200): string
+    {
+        $text = trim(preg_replace('/\\s+/u', ' ', strip_tags((string) $this->content)) ?? '');
+
+        return mb_strlen($text, 'UTF-8') > $limit
+            ? mb_substr($text, 0, $limit, 'UTF-8') . '…'
+            : $text;
+    }
+
+    public function isExpiring(int $days = 30): bool
+    {
+        if ($this->status === 'expiring') {
+            return true;
+        }
+
+        if ($this->status !== 'active' || !$this->end_date) {
+            return false;
+        }
+
+        $endDate = $this->end_date->copy()->startOfDay();
+
+        return $endDate->greaterThanOrEqualTo(today())
+            && $endDate->lessThanOrEqualTo(today()->addDays($days));
+    }
+
     public function isEmployerContract(): bool
     {
         return $this->type === 'upstream';
@@ -334,8 +386,4 @@ class Contract extends Model
         return (float) $this->current_amount / 10;
     }
 
-    public function requiresHighLevelSignature(): bool
-    {
-        return $this->getAmountInToman() >= 900_000_000;
-    }
 }

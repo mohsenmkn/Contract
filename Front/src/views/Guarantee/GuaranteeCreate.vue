@@ -2,8 +2,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useGuaranteeStore } from '@/stores/contract/guaranteeStore'
-import { useContractStore } from '@/stores/contract/contractStore'
+import { useGuaranteeStore } from '@/stores/guaranteeStore'
+import api from '@/api/axios'
 import { useGuarantee } from '@/composables/useGuarantee'
 import AmountInput from '@/components/contract/AmountInput.vue'
 import { showToast } from '@/plugins/toast'
@@ -11,18 +11,19 @@ import { showToast } from '@/plugins/toast'
 const router = useRouter()
 const route = useRoute()
 const guaranteeStore = useGuaranteeStore()
-const contractStore = useContractStore()
 const { typeOptions } = useGuarantee()
 
 const loading = ref(false)
 const errors = ref({})
+const contract = ref(null)
 
 const contractId = computed(() => route.params.contractId || route.query.contract_id)
-const contract = computed(() => contractStore.currentContract)
 
 const form = ref({
   contract_id: contractId.value,
-  type: 'performance',
+  type: '',
+  instrument_type: '',
+  instrument_number: '',
   amount: null,
   bank_name: '',
   bank_branch: '',
@@ -33,7 +34,14 @@ const form = ref({
 
 onMounted(async () => {
   if (contractId.value) {
-    await contractStore.fetchContractById(contractId.value)
+    try {
+      const { data } = await api.get(`/guarantee-desk/${contractId.value}`)
+      contract.value = data.data
+      form.value.type = contract.value.guarantee_type || ''
+      form.value.instrument_type = contract.value.guarantee_instrument_type || ''
+    } catch {
+      showToast({ severity: 'error', summary: 'دسترسی', detail: 'این قرارداد در میز دریافت ضمانت در دسترس نیست.', life: 4000 })
+    }
   }
 })
 
@@ -41,6 +49,8 @@ const validate = () => {
   errors.value = {}
 
   if (!form.value.type) errors.value.type = 'نوع الزامی است'
+  if (!form.value.instrument_type) errors.value.instrument_type = 'نوع سند ضمانت را انتخاب کنید'
+  if (!form.value.instrument_number?.trim()) errors.value.instrument_number = 'شماره چک یا سفته الزامی است'
   if (!form.value.amount) errors.value.amount = 'مبلغ الزامی است'
   if (!form.value.bank_name) errors.value.bank_name = 'نام بانک الزامی است'
   if (!form.value.issue_date) errors.value.issue_date = 'تاریخ صدور الزامی است'
@@ -56,7 +66,7 @@ const handleSubmit = async () => {
   try {
     await guaranteeStore.createGuarantee(form.value)
     showToast({ severity: 'success', summary: 'ضمانت‌نامه ثبت شد', life: 3000 })
-    router.push(`/contracts/${contractId.value}`)
+    router.push('/guarantee-desk')
   } catch (err) {
     showToast({ severity: 'error', summary: 'خطا', detail: err.message, life: 5000 })
   } finally {
@@ -93,6 +103,7 @@ const handleSubmit = async () => {
                 option-label="label"
                 option-value="value"
                 class="w-full"
+                disabled
                 :invalid="!!errors.type"
             />
             <small v-if="errors.type" class="text-red-500">{{ errors.type }}</small>
@@ -105,6 +116,22 @@ const handleSubmit = async () => {
               :invalid="!!errors.amount"
           />
           <small v-if="errors.amount" class="text-red-500">{{ errors.amount }}</small>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">نوع سند ضمانت</label>
+            <Select v-model="form.instrument_type" :options="[
+              { label: 'چک ضمانت', value: 'check' },
+              { label: 'سفته', value: 'promissory_note' },
+              { label: 'ضمانت‌نامه بانکی', value: 'bank_guarantee' },
+            ]" option-label="label" option-value="value" class="w-full" disabled />
+            <small class="text-surface-600">نوع ضمانت و سند را واحد حقوقی و قراردادها تعیین می‌کنند.</small>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">شماره چک یا سفته</label>
+            <InputText v-model="form.instrument_number" class="w-full" :invalid="!!errors.instrument_number" />
+            <small v-if="errors.instrument_number" class="text-red-500">{{ errors.instrument_number }}</small>
+          </div>
         </div>
         </template>
       </Card>

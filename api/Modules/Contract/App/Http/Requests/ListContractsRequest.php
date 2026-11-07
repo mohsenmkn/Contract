@@ -15,7 +15,7 @@ class ListContractsRequest extends FormRequest
     {
         return [
             'type' => 'nullable|in:upstream,downstream',
-            'status' => 'nullable|in:draft,pending_internal_approval,pending_contractor_sign,active,expiring,completed,terminated',
+            'status' => 'nullable|in:draft,pending_contract_review,pending_legal_review,legal_draft,rejected_by_legal,pending_contractor_sign,pending_guarantee,pending_unit_sign,pending_legal_sign,pending_executive_sign,pending_notification,active,expiring,completed,terminated',
             'party_id' => 'nullable|exists:parties,id',
             'search' => 'nullable|string|max:100',
             'expiring_soon' => 'nullable|integer|min:1|max:365',

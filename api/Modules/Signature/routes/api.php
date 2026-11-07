@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Signature\App\Http\Controllers\SignatureController;
+use Modules\Signature\App\Http\Controllers\SignatureAssetController;
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::get('signatures/pending', [SignatureController::class, 'myPendingSignatures']);
@@ -9,4 +10,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::post('signatures/{signature}/request-otp', [SignatureController::class, 'requestOtp']);
     Route::post('signatures/{signature}/verify-and-sign', [SignatureController::class, 'verifyAndSign']);
     Route::post('signatures/{signature}/reject', [SignatureController::class, 'rejectDocument']);
+    Route::get('signature-assets/me', [SignatureAssetController::class, 'status']);
+    Route::get('signature-assets/users', [SignatureAssetController::class, 'users']);
+    Route::post('signature-assets/users/{user}', [SignatureAssetController::class, 'storeForUser']);
 });

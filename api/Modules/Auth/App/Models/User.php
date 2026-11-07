@@ -130,6 +130,22 @@ class User extends Authenticatable
             return $contract->party_id === $this->party_id;
         }
 
+        if ($this->hasAnyRole(['super-admin', 'contract_manager', 'legal_expert'])) {
+            return true;
+        }
+
+        if ($this->hasAnyRole(['unit_contract_staff', 'unit_head', 'unit_manager', 'unit_deputy'])) {
+            $assignedUnitId = \Illuminate\Support\Facades\DB::table('contract_unit_signers')
+                ->where('user_id', $this->id)
+                ->value('unit_id') ?? $this->getUnit()?->id;
+
+            return (int) $assignedUnitId === (int) $contract->unit_id;
+        }
+
+        if ($this->isUnitRepresentative()) {
+            return (int) $this->getUnit()?->id === (int) $contract->unit_id;
+        }
+
         return true;
     }
 
@@ -148,7 +164,7 @@ class User extends Authenticatable
      */
     public function isUnitRepresentative(): bool
     {
-        return $this->organizationalUnit()->exists();
+        return $this->getUnit() !== null;
     }
 
     /**
@@ -157,7 +173,17 @@ class User extends Authenticatable
     public function getUnit(): ?\Modules\Organization\App\Models\OrganizationalUnit
     {
         $rep = $this->organizationalUnit()->first();
-        return $rep?->unit;
+        if ($rep?->unit) {
+            return $rep->unit;
+        }
+
+        $unitId = \Illuminate\Support\Facades\DB::table('contract_unit_signers')
+            ->where('user_id', $this->id)
+            ->value('unit_id');
+
+        return $unitId
+            ? \Modules\Organization\App\Models\OrganizationalUnit::find($unitId)
+            : null;
     }
 
     /**
@@ -165,7 +191,7 @@ class User extends Authenticatable
      */
     public function canSignExecutive(): bool
     {
-        return $this->hasAnyRole(['ceo', 'deputy_ceo', 'board_member']);
+        return $this->hasAnyRole(['ceo', 'board_member']);
     }
 
     /**
@@ -177,13 +203,8 @@ class User extends Authenticatable
             return false;
         }
 
-        // اگر قرارداد بالای 900 میلیون است، فقط مدیرعامل یا هیئت مدیره
-        if ($contract->requiresHighLevelSignature()) {
-            return $this->hasAnyRole(['ceo', 'board_member']);
-        }
-
-        // اگر زیر 900 میلیون است، معاون مالی هم می‌تواند
-        return true;
+        return $this->hasRole('ceo')
+            || ($contract->requires_board_signature && $this->hasRole('board_member'));
     }
 
 }

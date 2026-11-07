@@ -2,7 +2,7 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { workflowService } from '@/api/contract/workflowService'
+import { workflowService } from '@/services/workflowService'
 
 export const useWorkflowStore = defineStore('workflow', () => {
     const loading = ref(false)
@@ -77,10 +77,10 @@ export const useWorkflowStore = defineStore('workflow', () => {
         }
     }
 
-    const notifyContractor = async (contractId) => {
+    const notifyContractor = async (contractId, letterBody) => {
         loading.value = true
         try {
-            const response = await workflowService.notifyContractor(contractId)
+            const response = await workflowService.notifyContractor(contractId, letterBody)
             return response.data
         } finally {
             loading.value = false

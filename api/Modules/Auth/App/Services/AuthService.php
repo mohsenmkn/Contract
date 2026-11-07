@@ -123,10 +123,7 @@ class AuthService
             "provider" => (int) config('services.msgway.provider', 0),
             "templateID" => (int) config('services.msgway.template_id_default', 0),
             "params" => [
-                $code,
-                "راه پیام",
-                "msgway.com"
-
+                $code
             ]
         ];
         try {

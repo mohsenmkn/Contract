@@ -17,9 +17,9 @@ class OtpService
     /**
      * ایجاد و ارسال کد OTP
      */
-    public function generateAndSend(Model $signable, User $user, int $templateId = 23490): OtpCode
+    public function generateAndSend(Model $signable, User $user): OtpCode
     {
-        return DB::transaction(function () use ($signable, $user, $templateId) {
+        return DB::transaction(function () use ($signable, $user) {
             // غیرفعال کردن OTP های قبلی pending برای همین سند
             OtpCode::where('otpable_type', get_class($signable))
                 ->where('otpable_id', $signable->id)
@@ -51,7 +51,12 @@ class OtpService
                 throw new Exception('شماره موبایل کاربر ثبت نشده است.');
             }
 
-            $result = $this->smsService->sendOtpCode($mobile, $code, $templateId);
+            $fullName = trim((string) $user->name);
+            $result = $this->smsService->sendOtpCode(
+                $mobile,
+                $fullName !== '' ? $fullName : 'امضاکننده',
+                $code,
+            );
 
             if (!$result['success']) {
                 // اگر ارسال پیامک ناموفق بود، OTP را حذف کن

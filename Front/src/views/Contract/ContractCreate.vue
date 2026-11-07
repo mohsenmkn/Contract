@@ -656,7 +656,7 @@ const handleSubmit = async () => {
 
     await contractStore.createContract(data)
     showToast({ severity: 'success', summary: 'قرارداد ایجاد شد', life: 3000 })
-    router.push('/contracts')
+    await router.push('/contracts')
   } catch (err) {
     showToast({ severity: 'error', summary: 'خطا', detail: err.message, life: 5000 })
   } finally {

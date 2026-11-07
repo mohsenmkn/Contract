@@ -1,6 +1,6 @@
 <!-- src/components/contract/SignaturePanel.vue -->
 <script setup>
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted, onMounted, nextTick } from 'vue'
 import { useConfirm } from 'primevue/useconfirm'
 import { useSignatureStore } from '@/stores/signatureStore'
 import { useAuthStore } from '@/stores/auth'
@@ -8,6 +8,7 @@ import { usePermission } from '@/composables/usePermission'
 import { useDateFormatter } from '@/composables/useDateFormatter'
 import { showToast } from '@/plugins/toast'
 import DateDisplay from './DateDisplay.vue'
+import api from '@/api/axios.js'
 
 const props = defineProps({
   signature: { type: Object, default: null },
@@ -31,9 +32,11 @@ const comments = ref('')
 const rejectDialog = ref(false)
 const rejecting = ref(false)
 const rejectionError = ref('')
+const hasSignatureAsset = ref(null)
 
 // OTP State
 const otpDialog = ref(false)
+const otpInputContainer = ref(null)
 const otpCode = ref('')
 const otpId = ref(null)
 const otpExpiresIn = ref(0)
@@ -50,12 +53,22 @@ const isSigned = computed(() => props.signature?.status === 'signed')
 const isRejected = computed(() => props.signature?.status === 'rejected')
 
 const isMine = computed(() =>
-    props.signature?.signer_id === authStore.user?.id
+    props.signature?.signer_id === authStore.user?.id || Boolean(props.signature?.group)
 )
 
 const canSign = computed(() =>
-    can('signatures.sign') && isPending.value && isMine.value
+    can('signatures.sign') && isPending.value && isMine.value && hasSignatureAsset.value !== false
 )
+
+onMounted(async () => {
+  if (!props.signature?.group || props.signature.status !== 'pending') return
+  try {
+    const { data } = await api.get('/signature-assets/me')
+    hasSignatureAsset.value = Boolean(data.data?.has_signature_image)
+  } catch {
+    hasSignatureAsset.value = null
+  }
+})
 
 const documentLabel = computed(() => {
   const type = props.signature?.signable_type || ''
@@ -69,12 +82,20 @@ const hasContent = computed(() =>
 )
 
 const formatOtpTime = computed(() => {
-  const m = Math.floor(otpExpiresIn.value / 60)
-  const s = otpExpiresIn.value % 60
-  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+  const secondsLeft = Number.isFinite(Number(otpExpiresIn.value)) ? Math.max(0, Math.floor(Number(otpExpiresIn.value))) : 0
+  const m = Math.floor(secondsLeft / 60)
+  const s = secondsLeft % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 })
 
 const isOtpExpired = computed(() => otpExpiresIn.value <= 0)
+
+const focusOtpInput = async () => {
+  await nextTick()
+  requestAnimationFrame(() => {
+    otpInputContainer.value?.querySelector('input')?.focus()
+  })
+}
 
 // ✅ درخواست کد OTP
 const handleRequestOtp = () => {
@@ -104,9 +125,14 @@ const openOtpDialog = async () => {
 
   try {
     const response = await signatureStore.requestOtp(props.signature.id, 0)
-    otpId.value = response.data.otp_id
-    otpExpiresIn.value = response.data.expires_in_seconds
-    otpMobile.value = response.data.mobile
+    const data = response?.data?.data ?? response?.data ?? response
+    const expiresIn = Number(data?.expires_in_seconds)
+    if (!data?.otp_id || !Number.isFinite(expiresIn) || expiresIn <= 0) {
+      throw new Error('پاسخ سرور برای زمان انقضای کد تأیید معتبر نیست.')
+    }
+    otpId.value = data.otp_id
+    otpExpiresIn.value = expiresIn
+    otpMobile.value = data.mobile
 
     otpDialog.value = true
     startOtpTimer()
@@ -227,6 +253,10 @@ const confirmReject = async () => {
 // تایمر شمارش معکوس
 const startOtpTimer = () => {
   clearInterval(otpTimer)
+  if (!Number.isFinite(Number(otpExpiresIn.value)) || Number(otpExpiresIn.value) <= 0) {
+    otpExpiresIn.value = 0
+    return
+  }
   otpTimer = setInterval(() => {
     if (otpExpiresIn.value > 0) {
       otpExpiresIn.value--
@@ -380,6 +410,9 @@ onUnmounted(() => {
             </div>
           </div>
 
+          <Message v-else-if="isPending && hasSignatureAsset === false && isMine" severity="warn" :closable="false">
+            برای تعریف امضای الکترونیکی به واحد حقوقی و قراردادها مراجعه نمایید.
+          </Message>
           <Message v-else-if="isPending" severity="warn" :closable="false">
             منتظر امضای کاربر تعیین‌شده برای این سند هستید.
           </Message>
@@ -395,6 +428,7 @@ onUnmounted(() => {
       :modal="true"
       :closable="false"
       style="width: min(95vw, 450px)"
+      @show="focusOtpInput"
   >
     <div class="space-y-4">
       <div class="text-center">
@@ -408,12 +442,13 @@ onUnmounted(() => {
       </div>
 
       <!-- Input OTP -->
-      <div class="flex justify-center">
+      <div ref="otpInputContainer" class="flex justify-center otp-input-container" dir="ltr">
         <InputOtp
             v-model="otpCode"
             :length="6"
             :disabled="submitting"
             integer-only
+            dir="ltr"
         />
       </div>
 
@@ -572,8 +607,15 @@ onUnmounted(() => {
   font-size: 1.5rem !important;
   font-weight: 700 !important;
   text-align: center !important;
+  direction: ltr !important;
+  unicode-bidi: plaintext;
   border-radius: 10px !important;
   margin: 0 4px !important;
+}
+
+.otp-input-container,
+.otp-input-container :deep(.p-inputotp) {
+  direction: ltr !important;
 }
 
 :deep(.p-inputotp-input:focus) {

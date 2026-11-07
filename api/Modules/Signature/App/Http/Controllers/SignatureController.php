@@ -8,8 +8,10 @@ use Illuminate\Routing\Controller;
 use Modules\Signature\App\Http\Requests\SignDocumentRequest;
 use Modules\Signature\App\Http\Resources\SignatureResource;
 use Modules\Signature\App\Services\SignDocumentService;
+use Modules\Signature\App\Services\SigningService;
 use Modules\Signature\App\Services\OtpService;
 use Modules\Signature\App\Services\SmsService;
+use Modules\Signature\App\Services\SignatureImageService;
 use Modules\Signature\App\Models\Signature;
 use Modules\Signature\App\Models\OtpCode;
 use Modules\Contract\App\Models\Contract;
@@ -21,6 +23,7 @@ class SignatureController extends Controller
 {
     public function __construct(
         private SignDocumentService $signService,
+        private SigningService $signingService,
         private OtpService $otpService,
         public SmsService $smsService,
     ) {}
@@ -30,11 +33,15 @@ class SignatureController extends Controller
      */
     public function myPendingSignatures(): JsonResponse
     {
-        $signatures = Signature::where('signer_id', auth()->id())
-            ->where('status', 'pending')
+        $user = auth()->user();
+        $signatures = Signature::awaitingUser($user)
             ->with(['signable', 'signer'])
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            // Keep the pending list consistent with the detail/OTP authorization checks.
+            // Role-only matches can otherwise expose stale, wrong-phase, or already-signed slots.
+            ->filter(fn (Signature $signature) => $this->canAccessSignature($signature, $user))
+            ->values();
 
         return response()->json([
             'success' => true,
@@ -48,7 +55,7 @@ class SignatureController extends Controller
     public function show(Signature $signature): JsonResponse
     {
         // بررسی مالکیت
-        if ($signature->signer_id !== auth()->id()) {
+        if (!$this->canAccessSignature($signature)) {
             return response()->json([
                 'success' => false,
                 'message' => 'شما دسترسی به این سند را ندارید.',
@@ -85,7 +92,9 @@ class SignatureController extends Controller
      */
     public function requestOtp(Request $request, Signature $signature): JsonResponse
     {
-        if ($signature->signer_id !== auth()->id()) {
+        if (!$this->canAccessSignature($signature)
+            || ($signature->group === null && (int) $signature->signer_id !== (int) auth()->id())
+        ) {
             return response()->json([
                 'success' => false,
                 'message' => 'دسترسی غیرمجاز.',
@@ -100,10 +109,17 @@ class SignatureController extends Controller
         }
 
         try {
-            $signable = $signature->signable;
-            $templateId = (int) $request->input('template_id', 0);
+            try {
+                app(SignatureImageService::class)->activeFor(auth()->user());
+            } catch (\DomainException) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'برای تعریف امضای الکترونیکی به واحد حقوقی و قراردادها مراجعه نمایید.',
+                ], 422);
+            }
 
-            $otp = $this->otpService->generateAndSend($signable, auth()->user(), $templateId);
+            $signable = $signature->signable;
+            $otp = $this->otpService->generateAndSend($signable, auth()->user());
 
             return response()->json([
                 'success' => true,
@@ -134,7 +150,7 @@ class SignatureController extends Controller
             'comments' => 'nullable|string|max:1000',
         ]);
 
-        if ($signature->signer_id !== auth()->id()) {
+        if (!$this->canAccessSignature($signature)) {
             return response()->json([
                 'success' => false,
                 'message' => 'دسترسی غیرمجاز.',
@@ -180,11 +196,26 @@ class SignatureController extends Controller
         }
 
         // امضای سند
-        $signature = $this->signService->execute(
-            $signature,
-            'sign',
-            $request->comments ?? "امضا با کد تایید OTP (کد: {$request->code})"
-        );
+        if ($signature->group !== null && $signature->signable instanceof Contract) {
+            $this->signingService->complete($signature, auth()->user(), $request->comments);
+            $signature->refresh();
+        } else {
+            // Legacy final-approval slots did not have a signing group. Claim an
+            // unassigned eligible slot only after its OTP has been verified.
+            if ($this->isLegacyExecutiveSlotFor($signature, auth()->user())) {
+                $signature->signer_id = auth()->id();
+                $signature->role = collect(auth()->user()->getRoleNames())
+                    ->first(fn (string $role) => in_array($role, $signature->allowed_roles ?? [], true))
+                    ?? collect(auth()->user()->getRoleNames())->first(fn (string $role) => in_array($role, ['deputy_ceo', 'ceo', 'board_member'], true));
+                $signature->save();
+            }
+
+            $signature = $this->signService->execute(
+                $signature,
+                'sign',
+                $request->comments ?? "امضا با کد تایید OTP"
+            );
+        }
 
         return response()->json([
             'success' => true,
@@ -202,6 +233,55 @@ class SignatureController extends Controller
         return substr($mobile, 0, 4) . '***' . substr($mobile, -3);
     }
 
+    private function canAccessSignature(Signature $signature, $user = null): bool
+    {
+        $user ??= auth()->user();
+        if ($signature->group !== null) {
+            if ($signature->group === 'executive') {
+                return $this->canAccessExecutiveSlot($signature, $user);
+            }
+            return $this->signingService->canSignSlot($signature, $user);
+        }
+
+        return (int) $signature->signer_id === (int) $user->id
+            || $this->isLegacyExecutiveSlotFor($signature, $user);
+    }
+
+    private function canAccessExecutiveSlot(Signature $signature, $user): bool
+    {
+        if ($signature->status !== 'pending' || $signature->signable_type !== Contract::class) {
+            return false;
+        }
+
+        $contract = $signature->signable;
+        return $contract instanceof Contract
+            && $contract->status === 'pending_executive_sign'
+            && (int) $signature->content_version === (int) $contract->content_version
+            && $user->canSignThisContract($contract);
+    }
+
+    private function isLegacyExecutiveSlotFor(Signature $signature, $user): bool
+    {
+        if ($signature->group !== null
+            || $signature->status !== 'pending'
+            || $signature->signer_id !== null
+            || $signature->signable_type !== Contract::class
+        ) {
+            return false;
+        }
+
+        $contract = $signature->signable;
+        if (!$contract instanceof Contract || $contract->status !== 'pending_executive_sign'
+            || !$user->canSignThisContract($contract)
+        ) {
+            return false;
+        }
+
+        $allowedRoles = $signature->allowed_roles ?? [];
+        return empty($allowedRoles)
+            || $user->hasAnyRole($allowedRoles);
+    }
+
 /**
 * رد سند (بدون نیاز به OTP)
 */
@@ -211,7 +291,9 @@ class SignatureController extends Controller
             'comments' => 'required|string|min:3|max:1000',
         ]);
 
-        if ($signature->signer_id !== auth()->id()) {
+        if (!$this->canAccessSignature($signature)
+            || ($signature->group === null && (int) $signature->signer_id !== (int) auth()->id())
+        ) {
             return response()->json([
                 'success' => false,
                 'message' => 'دسترسی غیرمجاز.',
@@ -226,12 +308,16 @@ class SignatureController extends Controller
         }
 
         try {
-            // استفاده از SignDocumentService برای رد سند
-            $signature = $this->signService->execute(
-                $signature,
-                'reject',
-                $request->comments
-            );
+            if ($signature->group !== null && $signature->signable instanceof Contract) {
+                $this->signingService->reject($signature, auth()->user(), $request->comments);
+                $signature->refresh();
+            } else {
+                $signature = $this->signService->execute(
+                    $signature,
+                    'reject',
+                    $request->comments
+                );
+            }
 
             return response()->json([
                 'success' => true,

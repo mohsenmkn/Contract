@@ -13,11 +13,10 @@
  | - mode = any  → امضای «یکی» از نقش‌های مجاز کافی است (یک اسلات)
  |   mode = all  → «همه‌ی» نقش‌ها باید امضا کنند (برای هر نقش یک اسلات)
  |
- | جریان: پیمانکار → (ضمانت، در صورت نیاز) → واحد متقاضی → حقوقی → اجرایی → ابلاغ
+ | جریان: پیمانکار → واحد متقاضی → حقوقی → مدیرعامل/هیئت‌مدیره → ابلاغ
+ | ضمانت، در صورت نیاز، باید پیش از ابلاغ توسط واحد مالی ثبت شود و مانع امضاها نیست.
  */
 return [
-
-    'executive_threshold_toman' => 1_000_000_000,
 
     // ورود قرارداد به این وضعیت‌ها همه‌ی امضاها را باطل می‌کند
     'reset_all_statuses' => ['draft', 'pending_legal_review', 'legal_draft'],
@@ -26,8 +25,6 @@ return [
         'contractor' => [
             'status' => 'pending_contractor_sign',
             'next_status' => 'pending_unit_sign',
-            // اگر contracts.requires_guarantee فعال باشد، اول مرحله‌ی دریافت ضمانت
-            'next_status_if_guarantee' => 'pending_guarantee',
             'groups' => ['contractor'],
         ],
         'unit' => [
@@ -60,12 +57,11 @@ return [
         ],
         'legal' => [
             'mode' => 'any',
-            'roles' => ['legal_manager'],
+            'roles' => ['legal_expert'],
         ],
         'executive' => [
             'mode' => 'all',
-            'roles' => ['deputy_ceo'],                        // مبلغ < آستانه: فقط معاون مالی
-            'roles_high_amount' => ['ceo', 'board_member'],   // مبلغ >= آستانه: مدیرعامل + یک عضو هیئت‌مدیره
+            'roles' => ['ceo'],
         ],
     ],
 
@@ -73,7 +69,7 @@ return [
         'unit_head' => 'رئیس واحد',
         'unit_manager' => 'مدیر واحد',
         'unit_deputy' => 'معاون واحد',
-        'legal_manager' => 'مدیر واحد حقوقی',
+        'legal_expert' => 'کارشناس حقوقی',
         'contractor' => 'پیمانکار',
         'deputy_ceo' => 'معاون مالی',
         'ceo' => 'مدیرعامل',

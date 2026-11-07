@@ -2,12 +2,20 @@
 
 import {
     LayoutDashboard, Users, ShieldCheck, Wallet, FileText, SquareStack,
-    FolderTree, Building2, Settings, UsersRound, RefreshCw, Network,
+    FolderTree, Building2, Settings, UsersRound, Network,
     FileSignature, Handshake, Receipt, Shield, PenTool, BarChart3,
-    FilePlus2, CreditCard,Send,Briefcase,UserCheck,
+    FilePlus2, CreditCard, Briefcase, UserCheck,
 } from 'lucide-vue-next'
 
 export const menuItems = [
+    {
+        key: 'unit-dashboard',
+        label: 'داشبورد واحد',
+        to: '/unit-dashboard',
+        access: 'contracts.read',
+        roles: ['unit_contract_staff', 'unit_head', 'unit_manager', 'unit_deputy', 'unit_representative'],
+        icon: LayoutDashboard,
+    },
     // ═══════════════════════════════════════════════
     // داشبورد
     // ═══════════════════════════════════════════════
@@ -23,13 +31,6 @@ export const menuItems = [
     // ═══════════════════════════════════════════════
     // ✅ درخواست‌های قرارداد من (برای نماینده واحد)
     {
-        key: 'my-contract-requests',
-        label: 'درخواست‌های من',
-        to: '/contract-requests',
-        access: 'contracts.create',
-        icon: Send,
-    },
-    {
         key: 'contracts',
         label: 'سامانه قراردادها',
         icon: FileSignature,
@@ -39,13 +40,15 @@ export const menuItems = [
                 label: 'داشبورد قراردادها',
                 to: '/contract-dashboard',
                 access: 'dashboard.view',
+                roles: ['super-dmin', 'contract_manager', 'financial_expert'],
                 icon: BarChart3,
             },
             {
                 key: 'contractor-portal',
-                label: 'پورتال پیمانکار',
+                label: 'پرتال پیمانکار',
                 to: '/contractor-portal',
                 access: 'contracts.read',
+                roles: ['contractor'],
                 icon: Building2,
             },
             {
@@ -91,11 +94,25 @@ export const menuItems = [
                 icon: Shield,
             },
             {
+                key: 'guarantee-desk',
+                label: 'میز دریافت ضمانت',
+                to: '/guarantee-desk',
+                access: 'guarantees.manage',
+                icon: ShieldCheck,
+            },
+            {
                 key: 'signatures',
                 label: 'امضاهای در انتظار',
                 to: '/signatures',
                 access: 'signatures.read',
                 icon: PenTool,
+            },
+            {
+                key: 'contract-system-settings',
+                label: 'تنظیمات سامانه قراردادها',
+                to: '/contract-system-settings',
+                roles: ['super-admin'],
+                icon: Settings,
             },
         ],
     },

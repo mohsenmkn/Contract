@@ -15,6 +15,8 @@ class CreateContractDTO
         public readonly ?string $currency = 'IRR',
         public readonly ?string $description = null,
         public readonly ?string $content = null,
+        public readonly ?int $unitId = null,
+        public readonly ?int $parentContractId = null,
     ) {}
 
     public static function fromArray(array $data): self
@@ -30,6 +32,8 @@ class CreateContractDTO
             currency: $data['currency'] ?? 'IRR',
             description: $data['description'] ?? null,
             content: $data['content'] ?? null,
+            unitId: isset($data['unit_id']) ? (int) $data['unit_id'] : null,
+            parentContractId: isset($data['parent_contract_id']) ? (int) $data['parent_contract_id'] : null,
         );
     }
 }

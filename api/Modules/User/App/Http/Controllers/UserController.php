@@ -16,7 +16,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $query = User::query()
-            ->with(['roles', 'party'])
+            ->with(['roles', 'party', 'organizationalUnit.unit'])
             ->orderByDesc('id');
 
         if ($search = $request->get('search')) {
@@ -37,6 +37,29 @@ class UserController extends Controller
         }
 
         $users = $query->paginate($request->get('per_page', 15));
+
+        $contractSignerUnits = DB::table('contract_unit_signers')
+            ->join('organizational_units', 'organizational_units.id', '=', 'contract_unit_signers.unit_id')
+            ->whereIn('contract_unit_signers.user_id', collect($users->items())->pluck('id'))
+            ->orderBy('contract_unit_signers.unit_role')
+            ->get([
+                'contract_unit_signers.user_id',
+                'organizational_units.id',
+                'organizational_units.name',
+                'organizational_units.code',
+            ])
+            ->unique('user_id')
+            ->keyBy('user_id');
+
+        foreach ($users->items() as $user) {
+            $unit = $user->organizationalUnit?->unit;
+            $unit ??= $contractSignerUnits->get($user->id);
+            $user->setAttribute('organizational_unit_data', $unit ? [
+                'id' => $unit->id,
+                'name' => $unit->name,
+                'code' => $unit->code,
+            ] : null);
+        }
 
         return response()->json([
             'success' => true,

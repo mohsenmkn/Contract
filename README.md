@@ -1,576 +1,159 @@
-# 📋 README - سامانه مدیریت قراردادها (Contract Management System)
+# سامانه مدیریت قراردادها
 
-## 🎯 معرفی پروژه
+راهنمای معرفی، راه‌اندازی و بهره‌برداری سامانه مدیریت قراردادها. این سامانه گردش قرارداد را از ثبت درخواست واحد تا بررسی، امضا، ضمانت، ابلاغ و پیگیری اسناد مرتبط پوشش می‌دهد. رابط کاربری فارسی و راست‌چین است و دسترسی‌ها بر اساس نقش و مجوز کنترل می‌شوند.
 
-سامانه مدیریت قراردادها یک پلتفرم جامع و یکپارچه برای مدیریت چرخه کامل قراردادها در سازمان است. این سیستم با رویکرد ماژولار و مقیاس‌پذیر طراحی شده و امکان مدیریت قراردادها از مرحله درخواست تا امضا و ابلاغ را فراهم می‌کند.
+> نسخهٔ مستندات: ۲ نوامبر ۲۰۲۶. برای اجرای واقعی، تنظیمات محیط، سرویس پیامک، گواهی HTTPS، دسترسی فایل‌ها و حساب‌های کاربران را با مدیر زیرساخت هماهنگ کنید.
 
-### ✨ ویژگی‌های کلیدی
+## قابلیت‌های اصلی
 
-- 🔄 **Workflow کامل قرارداد**: از درخواست تا امضا و ابلاغ
-- 👥 **مدیریت واحدهای سازمانی**: با نمایندگان اختصاصی
-- 🔐 **سیستم RBAC پیشرفته**: نقش‌ها و دسترسی‌های دقیق
-- ️ **امضای الکترونیکی**: با OTP و ثبت امن
-- 📊 **داشبوردهای تحلیلی**: برای مدیران و پیمانکاران
--  **پورتال پیمانکار**: دسترسی اختصاصی برای پیمانکاران
--  **رابط کاربری ریسپانسیو**: سازگار با موبایل و دسکتاپ
-- 🔔 **سیستم اعلان‌ها**: اطلاع‌رسانی خودکار در هر مرحله
+- ثبت و پیگیری قراردادهای واحدهای سازمانی با محدودسازی مشاهده بر اساس دسترسی کاربر.
+- بازبینی قرارداد در واحد قراردادها و واحد حقوقی، ثبت پیش‌نویس و بازگرداندن درخواست همراه با توضیح.
+- امضای پیمانکار پس از احراز هویت پیامکی یک‌بارمصرف (OTP) و ثبت امضای نقش‌های داخلی.
+- گردش ضمانت‌نامه، ثبت اطلاعات آن، پیگیری انقضا و ثبت آزادسازی؛ مسئول دریافت حضوری ضمانت می‌تواند دریافت را تأیید کند.
+- امضای مرحلهٔ پایانی بر اساس سقف مبلغ قابل‌تنظیم: زیر سقف، معاون مالی؛ از سقف به بالا، مدیرعامل و یک عضو هیئت‌مدیره.
+- ثبت ابلاغ قرارداد، تاریخچهٔ گردش، الحاقیه، صورت‌وضعیت، پرداخت و اسناد.
+- داشبورد متناسب با نقش، مدیریت کاربران و واحدها، تنظیم سربرگ چاپ و مدیریت امضای ثبت‌شدهٔ کاربران.
 
----
+## گردش معمول قرارداد پیمانکاری
 
-## ️ معماری سیستم
+۱. کارشناس قرارداد واحد، قرارداد را ثبت می‌کند و نیاز یا عدم نیاز به ضمانت را مشخص می‌کند.
+۲. درخواست برای بررسی واحد قراردادها فرستاده می‌شود؛ پس از بررسی، برای بررسی/تنظیم حقوقی می‌رود.
+۳. واحد حقوقی پیش‌نویس را تکمیل و برای امضای پیمانکار ارسال می‌کند. پیمانکار با OTP امضا می‌کند.
+۴. اگر قرارداد ضمانت بخواهد، پس از امضای پیمانکار، دریافت چک یا سفته از مسیر واحد مالی ثبت و تأیید می‌شود.
+۵. رئیس، مدیر یا معاون واحد متقاضی قرارداد را امضا می‌کند؛ سپس امضای حقوقی انجام می‌شود.
+۶. امضای نهایی با توجه به مبلغ انجام می‌شود. مقدار پیش‌فرض سقف در تنظیمات امضا یک میلیارد تومان است و مدیر مجاز سامانه می‌تواند آن را تغییر دهد. زیر سقف فقط معاون مالی امضا می‌کند؛ مبلغ برابر یا بیشتر از سقف، به امضای مدیرعامل و یک عضو هیئت‌مدیره نیاز دارد.
+۷. پس از امضاهای لازم، قرارداد برای ابلاغ به پیمانکار می‌رود. وضعیت قرارداد، سوابق اقدامات و فایل چاپی از صفحهٔ قرارداد قابل پیگیری است.
 
-### بک‌اند (Backend)
+> مسیر دقیق هر پرونده به وضعیت جاری، نوع قرارداد، نیاز به ضمانت، مجوزهای نقش و پیکربندی امضا وابسته است. قرارداد کارفرمایی نیز برای ثبت قرارداد مرجع و اقلام آن در نظر گرفته شده تا قرارداد پیمانکاری در صورت نیاز به اقلام/مبلغ قرارداد مرجع محدود شود؛ قبل از ارائهٔ نسخهٔ عملیاتی، این سناریو را با دادهٔ واقعی کسب‌وکار بازبینی کنید.
 
-```
-Laravel 11 + Nwidart Modules
-├── Modules/
-│   ├── Auth/          # احراز هویت و کاربران
-│   ├── Contract/      # مدیریت قراردادها
-│   ├── Party/         # طرفین قرارداد
-│   ├── Signature/     # امضای الکترونیکی
-│   ├── Organization/  # واحدهای سازمانی
-│   ├── Invoice/       # صورت‌وضعیت‌ها
-│   ├── Payment/       # پرداخت‌ها
-│   ├── Guarantee/     # ضمانت‌نامه‌ها
-│   ├── Amendment/     # الحاقیه‌ها
-│   └── Alert/         # هشدارها و اعلان‌ها
-```
+## نقش‌های سامانه
 
-### فرانت‌اند (Frontend)
+نام لاتین نقش‌ها شناسهٔ فنی و مقدار ثابت RBAC است؛ نام فارسی برای نمایش در رابط کاربری و مدیریت نقش به‌کار می‌رود. دسترسی واقعی می‌تواند در پنل نقش‌ها تغییر کند. قاعدهٔ سمت سرور و تعلق پرونده به واحد/پیمانکار نیز محدودیت‌های نقش را تکمیل می‌کند.
 
-```
-Vue 3 + Vite + PrimeVue
-├── src/
-│   ├── views/         # صفحات اصلی
-│   ├── components/    # کامپوننت‌های قابل استفاده مجدد
-│   ├── stores/        # Pinia Stores
-│   ├── api/           # سرویس‌های API
-│   ├── composables/   # Composition API
-│   └── router/        # مسیریابی
-```
+| شناسهٔ نقش            | عنوان فارسی | کاربرد و دامنهٔ مسئولیت |
+|-----------------------|---|---|
+| `super-admin`         | مدیر کل سامانه | دسترسی کامل سامانه؛ مدیریت حساب‌ها، نقش‌ها، مجوزها و تعریف تصویر امضای کاربران. برای استفادهٔ روزمرهٔ فرایند قرارداد مناسب نیست. |
+| `contract_manager`    | مدیر قراردادها | مدیریت چرخهٔ قراردادها، طرف‌های قرارداد، بررسی و پیگیری درخواست‌ها، ارسال به پیمانکار و ابلاغ در چارچوب مجوزهای داده‌شده. |
+| `legal_expert`        | کارشناس حقوقی | بررسی حقوقی، ویرایش پیش‌نویس، ارجاع برای امضای پیمانکار، امضای مرحلهٔ حقوقی و مشاهدهٔ تاریخچهٔ پرونده‌های مجاز. |
+| `financial_expert`    | کارشناس مالی | رسیدگی به صورت‌وضعیت و پرداخت‌ها، مشاهدهٔ اطلاعات مالی و آزادسازی ضمانت‌نامه طبق مجوزها. این نقش با «معاون مالی» که امضاکنندهٔ مرحلهٔ نهایی قراردادهای زیر سقف است تفاوت دارد. |
+| `contractor`          | پیمانکار | مشاهدهٔ قراردادهای مرتبط با خود، امضای قرارداد با OTP و پیگیری مواردی که برای پیمانکار نمایش داده شده‌اند؛ دسترسی به تاریخچهٔ داخلی قرارداد ندارد. |
+| `unit_contract_staff` | کارشناس قرارداد واحد | ثبت قرارداد برای واحد سازمانی خود، ویرایش درخواست و ارسال آن به واحد قراردادها. |
+| `unit_head`           | رئیس واحد | مشاهدهٔ قراردادهای واحد خود و امضای مرحلهٔ واحد، در صورت تخصیص و وجود امضای کاربر. |
+| `unit_manager`        | مدیر واحد | مشاهدهٔ قراردادهای واحد خود و امضای مرحلهٔ واحد، در صورت تخصیص و وجود امضای کاربر. |
+| `unit_deputy`         | معاون واحد | مشاهدهٔ قراردادهای واحد خود و امضای مرحلهٔ واحد، در صورت تخصیص و وجود امضای کاربر. |
+| `deputy_ceo`          | معاون مالی | امضای نهایی قراردادهای کمتر از سقف تنظیم‌شده؛ امضای این نقش جایگزین مرحلهٔ مدیرعامل و هیئت‌مدیره در این بازه است. |
+| `ceo`                 | مدیرعامل | یکی از دو امضای الزامی قراردادهای برابر یا بالاتر از سقف. |
+| `board_member`        | عضو هیئت‌مدیره | امضای دوم قراردادهای برابر یا بالاتر از سقف، در کنار مدیرعامل. |
+| `guarantee_officer`   | کارشناس دریافت ضمانت | دسترسی محدود به میز دریافت ضمانت برای مشاهدهٔ اطلاعات لازم و تأیید دریافت حضوری چک/سفته؛ دسترسی به متن و ویرایش سایر بخش‌های قرارداد ندارد. |
 
----
+### مجوزهای پیش‌فرض نقش‌ها
 
-## 🛠️ تکنولوژی‌های استفاده شده
+این جدول کلیدهای مجوزی را نشان می‌دهد که در `api/config/rbac.php` به‌عنوان پیش‌فرض تعریف شده‌اند. مجوزهایی که با پیشوند یکسان آمده‌اند به همان ماژول تعلق دارند؛ برای نمونه `contracts.read` یعنی مجوز `read` در ماژول قرارداد. `*` به معنی همهٔ مجوزها است.
 
-### بک‌اند
+| نقش | مجوزهای پیش‌فرض |
+|---|---|
+| `super_admin` | `*` |
+| `contract_manager` | `dashboard.view`; `parties.read/create/update`; `contracts.read/create/update/submit_to_legal/review/draft/send_to_contractor/notify`; `amendments.read/create`; `invoices.read`; `guarantees.read/create`; `documents.read/upload`; `reports.view` |
+| `legal_expert` | `dashboard.view`; `parties.read`; `contracts.read/create/review/draft/send_to_contractor/legal_sign`; `signatures.read/sign`; `amendments.read/approve`; `invoices.read`; `guarantees.read`; `documents.read` |
+| `financial_expert` | `dashboard.view`; `contracts.read`; `invoices.read/create/submit/approve`; `payments.read/create/update`; `guarantees.read/release`; `documents.read/upload`; `reports.view/export` |
+| `contractor` | `dashboard.view`; `contracts.read`; `invoices.read`; `signatures.read/sign`; `documents.read` |
+| `unit_contract_staff` | `dashboard.view`; `contracts.read/create/update/submit_to_legal/submit_to_contract_unit` |
+| `unit_head`, `unit_manager`, `unit_deputy` | `contracts.read/create/unit_sign/submit_to_contract_unit`; `signatures.read/sign` |
+| `deputy_ceo`, `ceo`, `board_member` | `contracts.read`; `signatures.read/sign` |
+| `guarantee_officer` | `guarantees.manage` |
 
-| تکنولوژی | نسخه | کاربرد |
-|----------|------|--------|
-| **PHP** | 8.2+ | زبان برنامه‌نویسی |
-| **Laravel** | 11.x | فریمورک اصلی |
-| **Nwidart Modules** | 11.x | معماری ماژولار |
-| **Spatie Permission** | 6.x | مدیریت نقش و دسترسی |
-| **Laravel Sanctum** | 4.x | احراز هویت API |
-| **MySQL** | 8.0+ | پایگاه داده |
-| **Redis** | 7.x | کش و صف‌ها |
+مجوزهای فوق نقش را تعریف می‌کنند؛ فیلتر دامنه همچنان مشخص می‌کند کدام قراردادها، واحدها و اسناد در دسترس کاربر باشند. نقش‌ها و مجوزهای واقعی نصب‌شده را در مدیریت نقش‌ها بررسی کنید.
 
-### فرانت‌اند
+### موارد مهم دسترسی و امضا
 
-| تکنولوژی | نسخه | کاربرد |
-|----------|------|--------|
-| **Vue.js** | 3.5+ | فریمورک اصلی |
-| **Vite** | 8.x | Build Tool |
-| **PrimeVue** | 4.5+ | کامپوننت‌های UI |
-| **Pinia** | 3.x | مدیریت State |
-| **Vue Router** | 4.6+ | مسیریابی |
-| **Axios** | 1.16+ | HTTP Client |
-| **Tailwind CSS** | 3.4+ | استایل‌دهی |
-| **Lucide Icons** | 1.x | آیکون‌ها |
-| **Chart.js** | 4.5+ | نمودارها |
+- کاربرانی که باید سندی را امضا کنند، باید تصویر امضای معتبر داشته باشند. ثبت یا جایگزینی امضای کاربران در صفحهٔ مدیریت امضاها توسط مدیر کل سامانه انجام می‌شود.
+- نقش کارشناس قرارداد واحد، نقش ثبت و پیگیری است؛ امضای واحد را یکی از نقش‌های رئیس، مدیر یا معاون واحد انجام می‌دهد.
+- کاربران هر واحد باید در ماژول سازمان به همان واحد نگاشت شوند. مسئول ثبت و امضاکنندگان واحد نقش‌های جداگانه دارند.
+- سمت‌های مدیرعامل/عضو هیئت‌مدیره/معاون مالی داشبورد اجرایی دارند و کارهای امضای در انتظار از آنجا قابل دسترسی است.
+- نقش پیمانکار فقط منوها و داده‌های مرتبط با پیمانکار را می‌بیند؛ تاریخچهٔ داخلی و داشبورد داخلی قراردادها برای او نمایش داده نمی‌شود.
+- برای هر کاربرِ امضاکننده، علاوه بر نقش و مجوز، باید امضای ثبت‌شده و اسلات امضای فعال در مرحلهٔ مربوط وجود داشته باشد.
 
----
+## فناوری و پوشه‌ها
 
-## 📦 نصب و راه‌اندازی
+| بخش | فناوری | مسیر |
+|---|---|---|
+| فرانت‌اند | Vue 3، Vite، PrimeVue، Pinia، Vue Router، Axios | `Front/` |
+| API | Laravel 10، PHP 8.1+، Laravel Modules، Sanctum، Spatie Permission | `api/` |
+| پایگاه داده | MySQL (مطابق تنظیمات محیط) | migrationهای `api/Modules/*/Database` |
+
+ماژول‌های API: `Acl`, `Alert`, `Amendment`, `Auth`, `Contract`, `Dashboard`, `Document`, `Guarantee`, `Invoice`, `Organization`, `Party`, `Payment`, `Signature`, `User`.
+
+## راه‌اندازی محیط توسعه
 
 ### پیش‌نیازها
 
-- PHP 8.2 یا بالاتر
-- Composer 2.x
-- Node.js 20.19+ یا 22.12+
-- MySQL 8.0+
-- Redis 7.x (اختیاری)
+- PHP 8.1 یا جدیدتر، Composer، Node.js مطابق `Front/package.json` (نسخهٔ ۲۰٫۱۹ به بالا یا ۲۲٫۱۲ به بالا) و MySQL.
+- افزونه‌های PHP مورد نیاز Laravel و وابستگی‌های Composer؛ تنظیم دسترسی نوشتن برای `api/storage` و `api/bootstrap/cache`.
+- برای OTP پیامکی، دسترسی و تنظیمات سرویس‌دهندهٔ پیامک. برای محیط آزمایشی از پیکربندی امن و مورد تأیید سازمان استفاده کنید.
 
-### مراحل نصب
+### API
 
-#### 1. کلون کردن پروژه
-
-```bash
-git clone <repository-url>
-cd contract-management-system
-```
-
-#### 2. نصب وابستگی‌های بک‌اند
-
-```bash
+```powershell
 cd api
 composer install
-cp .env.example .env
+Copy-Item .env.example .env
 php artisan key:generate
 ```
 
-#### 3. تنظیمات دیتابیس
+در `api/.env` مقادیر `APP_URL`، اتصال `DB_*`، `FILESYSTEM_DISK` و تنظیمات سرویس‌های مورد استفاده را وارد کنید. سپس:
 
-فایل `.env` را ویرایش کنید:
-
-```env
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=contract_management
-DB_USERNAME=root
-DB_PASSWORD=
-
-# تنظیمات پیامک (اختیاری)
-MSGWAY_API_KEY=your_api_key
-MSGWAY_BASE_URL=https://api.msgway.ir/v1
-MSGWAY_TEMPLATE_ID_OTP=12345
-```
-
-#### 4. اجرای Migration ها و Seeder ها
-
-```bash
+```powershell
 php artisan migrate --seed
-php artisan db:seed --class=ContractManagementSeeder
-php artisan db:seed --class=OrganizationSeeder
-```
-
-#### 5. ایجاد لینک Storage
-
-```bash
 php artisan storage:link
-```
-
-#### 6. نصب وابستگی‌های فرانت‌اند
-
-```bash
-cd ../frontend
-npm install
-```
-
-#### 7. اجرای پروژه
-
-**بک‌اند:**
-```bash
-cd api
 php artisan serve
 ```
 
-**فرانت‌اند:**
-```bash
-cd frontend
-npm run dev
-```
-
----
-
-## 🗄️ ساختار دیتابیس
-
-### جداول اصلی
-
-#### `users` - کاربران سیستم
-```sql
-- id, name, mobile, email, password
-- national_code, personnel_code
-- employee_type (personnel/contractor)
-- party_id, unit_id
-- is_active, settings
-```
-
-#### `organizational_units` - واحدهای سازمانی
-```sql
-- id, name, code, description
-- is_active
-```
-
-#### `unit_representatives` - نمایندگان واحدها
-```sql
-- id, unit_id, user_id
-- is_active, assigned_at
-```
-
-#### `contracts` - قراردادها
-```sql
-- id, contract_number, subject
-- party_id, unit_id, requesting_user_id
-- type (upstream/downstream)
-- status (workflow states)
-- start_date, end_date
-- initial_amount, current_amount, currency
-- content, pages_count, content_version
-- parent_contract_id
-- approved_by, approved_at, notified_at
-```
-
-#### `contract_items` - آیتم‌های قرارداد
-```sql
-- id, contract_id, parent_item_id
-- item_code, description, unit
-- quantity, unit_price, total_price
-```
-
-#### `signatures` - امضاهای سند
-```sql
-- id, signable_type, signable_id
-- signer_id, signer_type
-- status, signed_at
-- signature_hash, ip_address, user_agent
-```
-
-#### `executive_signatures` - امضاهای اجرایی
-```sql
-- id, contract_id, signer_id
-- signer_role (ceo/deputy_ceo/board_member)
-- signed_at, signature_hash
-```
-
-#### `otp_codes` - کدهای OTP
-```sql
-- id, otpable_type, otpable_id
-- user_id, code, purpose
-- status, attempts, max_attempts
-- expires_at, verified_at
-```
-
----
-
-## 🔄 Workflow قراردادها
-
-### چرخه کامل وضعیت‌ها
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  1. draft                    - پیش‌نویس (ثبت توسط واحد)          │
-│     ↓ [ارسال به حقوقی]                                           │
-│  2. pending_legal_review     - در انتظار بررسی حقوقی            │
-│     ↓ [تنظیم توسط حقوقی]                                         │
-│  3. legal_draft              - پیش‌نویس حقوقی (تکمیل شده)       │
-│     ↓ [ارسال به پیمانکار]                                        │
-│  4. pending_contractor_sign  - در انتظار امضای پیمانکار         │
-│     ↓ [امضای پیمانکار با OTP]                                    │
-│  5. pending_executive_sign   - در انتظار امضای مدیرعامل         │
-│     ↓ [امضای مدیرعامل/معاون/هیئت مدیره]                         │
-│  6. pending_notification     - در انتظار ابلاغ به پیمانکار      │
-│     ↓ [ابلاغ]                                                    │
-│  7. active                   - فعال                              │
-│     ↓ [پایان مدت]                                                │
-│  8. completed                - خاتمه یافته                      │
-│                                                                    │
-│  └── terminated              - فسخ شده (از هر وضعیتی)           │
-│  └── expiring                - در حال اتمام (خودکار)            │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### قوانین ترنزیشن
-
-```php
-const TRANSITIONS = [
-    'draft' => ['pending_legal_review', 'terminated'],
-    'pending_legal_review' => ['legal_draft', 'draft', 'terminated'],
-    'legal_draft' => ['pending_contractor_sign', 'pending_legal_review', 'terminated'],
-    'pending_contractor_sign' => ['pending_executive_sign', 'legal_draft', 'terminated'],
-    'pending_executive_sign' => ['pending_notification', 'pending_contractor_sign', 'terminated'],
-    'pending_notification' => ['active', 'pending_executive_sign', 'terminated'],
-    'active' => ['expiring', 'completed', 'terminated'],
-    'expiring' => ['completed', 'terminated', 'active'],
-    'completed' => [],
-    'terminated' => [],
-];
-```
-
----
-
-## 👥 نقش‌ها و دسترسی‌ها
-
-### نقش‌های سیستم
-
-| نقش | توضیح | دسترسی‌های کلیدی |
-|-----|-------|------------------|
-| **super_admin** | مدیر ارشد سیستم | دسترسی کامل به همه ماژول‌ها |
-| **unit_representative** | نماینده واحد | ایجاد درخواست قرارداد برای واحد خود |
-| **legal_officer** | کارشناس حقوقی | بررسی و تنظیم متن قراردادها |
-| **contract_manager** | مدیر قراردادها | مدیریت کامل قراردادها |
-| **financial_expert** | کارشناس مالی | مدیریت صورت‌وضعیت و پرداخت |
-| **ceo** | مدیرعامل | امضای قراردادهای بالای 900M |
-| **deputy_ceo** | معاون مالی | امضای قراردادهای زیر 900M |
-| **board_member** | عضو هیئت مدیره | امضای قراردادهای بالای 900M |
-| **contractor** | پیمانکار | مشاهده و امضای قراردادهای خود |
-
-### قانون امضای اجرایی
-
-```
-مبلغ قرارداد < 900,000,000 تومان:
-  ✅ معاون مالی (deputy_ceo)
-  ✅ مدیرعامل (ceo)
-  ✅ عضو هیئت مدیره (board_member)
-
-مبلغ قرارداد >= 900,000,000 تومان:
-  ❌ معاون مالی
-  ✅ مدیرعامل (ceo)
-  ✅ عضو هیئت مدیره (board_member)
-```
-
----
-
-## 🔌 API Endpoints
-
-### احراز هویت
-
-```
-POST   /api/v1/auth/login              # ورود
-POST   /api/v1/auth/logout             # خروج
-GET    /api/v1/auth/me                 # اطلاعات کاربر فعلی
-POST   /api/v1/auth/forgot-password/send-otp    # ارسال OTP
-POST   /api/v1/auth/forgot-password/verify-otp  # تایید OTP
-POST   /api/v1/auth/forgot-password/reset       # ریست رمز
-```
-
-### واحدهای سازمانی
-
-```
-GET    /api/v1/organizational-units              # لیست واحدها
-POST   /api/v1/organizational-units              # ایجاد واحد
-GET    /api/v1/organizational-units/{id}         # جزئیات واحد
-PUT    /api/v1/organizational-units/{id}         # بروزرسانی
-DELETE /api/v1/organizational-units/{id}         # حذف
-GET    /api/v1/organizational-units/{id}/representative  # نماینده
-POST   /api/v1/organizational-units/{id}/representative  # تعیین نماینده
-GET    /api/v1/organizational-units/my-unit      # واحد کاربر فعلی
-```
-
-### قراردادها
-
-```
-GET    /api/v1/contracts                         # لیست قراردادها
-POST   /api/v1/contracts                         # ایجاد قرارداد
-GET    /api/v1/contracts/{id}                    # جزئیات قرارداد
-PUT    /api/v1/contracts/{id}                    # بروزرسانی
-DELETE /api/v1/contracts/{id}                    # حذف
-
-# Workflow Endpoints
-POST   /api/v1/contracts/{id}/submit-to-legal    # ارسال به حقوقی
-POST   /api/v1/contracts/{id}/legal-draft        # تنظیم پیش‌نویس حقوقی
-POST   /api/v1/contracts/{id}/send-to-contractor # ارسال به پیمانکار
-POST   /api/v1/contracts/{id}/mark-contractor-signed # ثبت امضای پیمانکار
-POST   /api/v1/contracts/{id}/executive-sign     # امضای اجرایی
-GET    /api/v1/contracts/{id}/can-sign           # بررسی توانایی امضا
-POST   /api/v1/contracts/{id}/notify             # ابلاغ به پیمانکار
-GET    /api/v1/contracts/{id}/workflow-history   # تاریخچه workflow
-```
-
-### امضاها
-
-```
-GET    /api/v1/signatures/pending                # امضاهای در انتظار من
-GET    /api/v1/signatures/{id}                   # جزئیات امضا
-POST   /api/v1/signatures/{id}/request-otp       # درخواست OTP
-POST   /api/v1/signatures/{id}/verify-and-sign   # تایید OTP و امضا
-```
-
----
-
-##  ساختار پروژه
-
-```
-contract-management-system/
-├── api/                          # بک‌اند Laravel
-│   ├── app/
-│   ├── bootstrap/
-│   ├── config/
-│   ├── database/
-│   │   ├── migrations/
-│   │   └── seeders/
-│   ├── Modules/                  # ماژول‌های Nwidart
-│   │   ├── Auth/
-│   │   ├── Contract/
-│   │   ├── Organization/
-│   │   ├── Party/
-│   │   ├── Signature/
-│   │   └── ...
-│   ├── routes/
-│   └── tests/
-│
-├── frontend/                     # فرانت‌اند Vue.js
-│   ├── public/
-│   ├── src/
-│   │   ├── api/                  # سرویس‌های API
-│   │   ├── assets/               # فایل‌های استاتیک
-│   │   ├── components/           # کامپوننت‌ها
-│   │   ├── composables/          # Composition API
-│   │   ├── config/               # تنظیمات
-│   │   ├── plugins/              # پلاگین‌ها
-│   │   ├── router/               # مسیریابی
-│   │   ├── stores/               # Pinia Stores
-│   │   ├── views/                # صفحات
-│   │   ── App.vue
-│   ├── package.json
-│   └── vite.config.js
-│
-└── README.md
-```
-
----
-
-## 🚀 دستورالعمل‌های توسعه
-
-### ایجاد ماژول جدید
-
-```bash
-cd api
-php artisan module:make ModuleName
-```
-
-### ایجاد Migration
-
-```bash
-php artisan make:migration create_table_name --path=Modules/ModuleName/Database/Migrations
-```
-
-### ایجاد Controller
-
-```bash
-php artisan make:controller Modules/ModuleName/Http/Controllers/ControllerName
-```
-
-### اجرای تست‌ها
-
-```bash
-# بک‌اند
-cd api
-php artisan test
-
-# فرانت‌اند
-cd frontend
-npm run test
-```
-
-### پاک کردن کش
-
-```bash
-cd api
-php artisan config:clear
-php artisan cache:clear
-php artisan route:clear
-php artisan view:clear
-composer dump-autoload
-```
-
----
-
-## 🔐 امنیت
-
-### احراز هویت
-
-- استفاده از **Laravel Sanctum** برای API Authentication
-- توکن‌های JWT با انقضای خودکار
-- Rate Limiting برای جلوگیری از حملات Brute Force
-- Captcha برای لاگین پس از 5 تلاش ناموفق
-
-### امضای الکترونیکی
-
-- ثبت IP Address و User Agent
-- Hash امضا با SHA-256
-- کد OTP یکبار مصرف با انقضای 5 دقیقه
-- حداکثر 3 تلاش برای OTP
-
-### دسترسی‌ها
-
-- بررسی Permission در Middleware
-- Policy-based Authorization
-- Role-based Access Control (RBAC)
-
----
-
-##  داشبوردها
-
-### داشبورد مدیریتی
-
-- آمار کلی قراردادها
-- نمودار وضعیت قراردادها
-- قراردادهای در حال اتمام
-- آخرین فعالیت‌ها
-
-### پورتال پیمانکار
-
-- قراردادهای مرتبط با شرکت
-- امضاهای در انتظار
-- صورت‌وضعیت‌ها
-- پرداخت‌ها
-
----
-
-##  تست
-
-### بک‌اند
-
-```bash
-cd api
-php artisan test --filter=ContractTest
-```
+مهاجرت‌ها و seedهای اختصاصی را قبل از اجرا فهرست و اثرشان را مرور کنید؛ seed محتوای محیط عملیاتی را جایگزین یا بازنشانی نکنید مگر آن‌که عمداً برای محیط تازه آماده شده باشد.
 
 ### فرانت‌اند
 
-```bash
-cd frontend
-npm run test
+```powershell
+cd Front
+npm install
 ```
 
----
+در صورت نیاز `Front/.env` بسازید و `VITE_API_BASE_URL` را به نشانی API با پسوند `/api/v1` تنظیم کنید (برای نمونه `http://127.0.0.1:8000/api/v1`). سپس:
 
-## 📝 مستندات API
-
-برای مشاهده مستندات کامل API:
-
-```bash
-cd api
-php artisan scribe:generate
+```powershell
+npm run dev
 ```
 
-سپس به آدرس `/docs/api` مراجعه کنید.
+ساخت نسخهٔ قابل انتشار با `npm run build` انجام می‌شود.
 
----
+## چک‌لیست ارائه و استقرار
 
-## 🤝 مشارکت در پروژه
+- حساب نمایشی جداگانه برای نقش‌های کلیدی بسازید؛ از حساب مدیر کل برای نمایش فرایند عادی استفاده نکنید.
+- برای تمام امضاکنندگان تصویر امضا ثبت کنید و تخصیص افراد واحدها و مسئول دریافت ضمانت را کنترل کنید.
+- سقف امضای نهایی و ارز/واحد مبلغ را با سیاست سازمان تطبیق دهید؛ مقدار پیش‌فرض کد یک میلیارد تومان است.
+- تنظیمات اتصال پیامک و دریافت OTP را در محیط همان ارائه آزمایش کنید.
+- یک سربرگ معتبر در تنظیمات چاپ ثبت و با چاپ چندصفحه‌ای بررسی کنید؛ تنظیم «چاپ پس‌زمینه‌ها» در مرورگر نیز ممکن است لازم باشد.
+- قرارداد پیمانکاری آزمایشی را از ایجاد تا ابلاغ طی کنید؛ سناریوی ضمانت و هر دو شاخهٔ امضای نهایی را جداگانه نشان دهید.
+- قرارداد کارفرمایی مرجع، اقلام آن، تاریخ انقضا و ارتباط قرارداد پیمانکاری با آن را پیش از نمایش با مدیر فرایند مرور کنید.
+- دسترسی و محرمانگی داده‌ها، پشتیبان پایگاه داده و فایل‌ها، HTTPS، پیامک و سیاست نگهداری لاگ را در محیط ارائه بررسی کنید.
 
-1. Fork کردن پروژه
-2. ایجاد Branch جدید (`git checkout -b feature/AmazingFeature`)
-3. Commit تغییرات (`git commit -m 'Add some AmazingFeature'`)
-4. Push به Branch (`git push origin feature/AmazingFeature`)
-5. باز کردن Pull Request
+## سناریوی پیشنهادی برای نمایش سامانه
 
----
+۱. **ورود و داشبورد:** با کاربر واحد وارد شوید و داشبورد محدود به همان واحد را نشان دهید؛ سپس تفاوت آن را با داشبورد حقوقی/مدیریت قراردادها و داشبورد اجرایی توضیح دهید.
+۲. **ثبت درخواست:** با `unit_contract_staff` قرارداد را ثبت، تاریخ‌ها و اقلام را وارد و نیاز به ضمانت را مشخص کنید؛ قرارداد را برای واحد قراردادها بفرستید.
+۳. **بررسی و آماده‌سازی:** با `contract_manager` بررسی و ارسال به حقوقی را نشان دهید. با `legal_expert` پیش‌نویس را تکمیل کنید و در صورت نیاز توضیح بازگشت را ثبت کنید.
+۴. **امضای پیمانکار:** پرتال پیمانکار و احراز OTP را نمایش دهید. OTP واقعی را فقط در دستگاه/شمارهٔ آزمایشی ارائه کنید.
+۵. **ضمانت و امضای داخلی:** برای نمونهٔ نیازمند ضمانت، میز `guarantee_officer` و تأیید دریافت را نشان دهید؛ سپس امضای یکی از رئیس/مدیر/معاون واحد و امضای حقوقی را مرور کنید.
+۶. **دو شاخهٔ امضای پایانی:** با دادهٔ آزمایشی زیر سقف، امضای معاون مالی را نشان دهید. برای مبلغ برابر یا بالاتر از سقف، اسلات مدیرعامل و عضو هیئت‌مدیره را نشان دهید. اگر نمی‌خواهید تنظیم پایگاه داده را تغییر دهید، از دو پروندهٔ آزمایشی از پیش آماده استفاده کنید.
+۷. **نتیجه و پیگیری:** ابلاغ به پیمانکار، تاریخچه، نمایش جزئیات، چاپ چندصفحه‌ای با سربرگ، و پیوند به الحاقیه/صورت‌وضعیت را نمایش دهید.
 
-## 📄 لایسنس
+**حساب‌های پیشنهادی ارائه:** مدیر کل، مدیر قراردادها، کارشناس حقوقی، کارشناس ثبت واحد، رئیس یا مدیر واحد، پیمانکار، کارشناس دریافت ضمانت، معاون مالی، مدیرعامل و عضو هیئت‌مدیره. دسترسی کاربران و تصویر امضای نمایشی را پیش از جلسه آماده کنید.
 
-این پروژه تحت لایسنس MIT منتشر شده است. برای اطلاعات بیشتر به فایل `LICENSE` مراجعه کنید.
+## مستندات جزئی
 
----
+- [راهنمای فرانت‌اند](Front/README.md)
+- [راهنمای API](api/README.md)
+- برای توضیح مسئولیت و فایل‌های هر ماژول، README همان پوشه در `api/Modules/` را ببینید.
 
-## 👥 تیم توسعه
+## نکات پشتیبانی
 
-- **تیم توسعه**: [نام تیم]
-- **مدیر پروژه**: [نام مدیر]
-- **توسعه‌دهندگان**: [لیست توسعه‌دهندگان]
-
----
-
-## 📞 پشتیبانی
-
-برای گزارش باگ یا درخواست ویژگی جدید:
-
-- 📧 ایمیل: support@example.com
--  Issues: [GitHub Issues](https://github.com/your-repo/issues)
--  Wiki: [GitHub Wiki](https://github.com/your-repo/wiki)
-
----
-
-##  تشکر
-
-از تمام contributors و استفاده‌کنندگان این پروژه سپاسگزاریم.
-
----
-
-**ساخته شده با ❤️ توسط تیم توسعه**
-
-**نسخه**: 1.0.0  
-**آخرین بروزرسانی**: 2026-10-28
+مقادیر نام نقش و مجوزهای پایه در `api/config/rbac.php` تعریف شده‌اند؛ تنظیم مراحل امضا در `api/config/signing.php` و منطق‌های گردش اصلی در `api/Modules/Contract` و `api/Modules/Signature` قرار دارد. نسخهٔ نهایی مجوزها باید از پنل مدیریت نقش‌ها نیز بازبینی شود، چون نقش‌های ذخیره‌شده در پایگاه داده ممکن است با مقادیر پایهٔ کد تفاوت داشته باشند.

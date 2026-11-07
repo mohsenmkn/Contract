@@ -64,7 +64,8 @@ export const useAuthStore = defineStore('auth', {
             const roleNames = roles.map(r => typeof r === 'string' ? r : r.name)
 
             if (roleNames.includes('contractor')) return 'contractor.portal'
-            if (roleNames.includes('unit_representative')) return 'contract.requests'
+            if (roleNames.some(role => ['unit_contract_staff', 'unit_head', 'unit_manager', 'unit_deputy', 'unit_representative'].includes(role))) return 'unit.dashboard'
+            if (roleNames.some(role => ['ceo', 'board_member', 'deputy_ceo'].includes(role))) return 'executive.dashboard'
             return 'Dashboard'
         },
     },

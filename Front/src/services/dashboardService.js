@@ -3,6 +3,8 @@
 import api from '@/api/axios'
 
 export const dashboardService = {
+    getUnitDashboard: () => api.get('/dashboard/unit').then(res => res.data),
+
     // آمار کلی قراردادها (برای مدیر قراردادها)
     getContractStats: () => {
         return api.get('/dashboard/contract-stats')

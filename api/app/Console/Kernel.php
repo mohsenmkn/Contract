@@ -4,14 +4,16 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use Modules\Contract\App\Services\ContractSettings;
 
 class Kernel extends ConsoleKernel
 {
     protected function schedule(Schedule $schedule): void
     {
-        // بررسی قراردادهای در حال اتمام - هر روز ساعت 8 صبح
+        // ساعت هشدارهای پایان قرارداد از تنظیمات سامانه خوانده می‌شود.
         $schedule->command('contracts:check-expiring')
-            ->dailyAt('08:00');
+            ->dailyAt(app(ContractSettings::class)->expiryAlertSettings()['send_time'])
+            ->timezone('Asia/Tehran');
 
         // بررسی ضمانت‌نامه‌های در حال اتمام - هر روز ساعت 8 صبح
         $schedule->command('guarantees:check-expiring')

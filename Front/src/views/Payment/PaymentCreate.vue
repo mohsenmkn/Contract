@@ -2,8 +2,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { usePaymentStore } from '@/stores/contract/paymentStore'
-import { useInvoiceStore } from '@/stores/contract/invoiceStore'
+import { usePaymentStore } from '@/stores/paymentStore'
+import { useInvoiceStore } from '@/stores/invoiceStore'
 import { usePayment } from '@/composables/usePayment'
 import AmountInput from '@/components/contract/AmountInput.vue'
 import AmountDisplay from '@/components/contract/AmountDisplay.vue'

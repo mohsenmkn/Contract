@@ -1,0 +1,27 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('contract_items', function (Blueprint $table) {
+            $table->foreignId('employer_contract_item_id')
+                ->nullable()
+                ->after('parent_item_id')
+                ->constrained('contract_items')
+                ->restrictOnDelete();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('contract_items', function (Blueprint $table) {
+            $table->dropForeign(['employer_contract_item_id']);
+            $table->dropColumn('employer_contract_item_id');
+        });
+    }
+};

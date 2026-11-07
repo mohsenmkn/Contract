@@ -17,6 +17,9 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    // نام کارفرما در متن ابلاغ قرارداد؛ در صورت نیاز در .env با CONTRACT_EMPLOYER_NAME تنظیم شود.
+    'contract_employer_name' => env('CONTRACT_EMPLOYER_NAME', env('APP_NAME', 'Laravel')),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

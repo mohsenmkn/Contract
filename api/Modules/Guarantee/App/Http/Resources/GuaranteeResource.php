@@ -13,6 +13,14 @@ class GuaranteeResource extends JsonResource
             'id' => $this->id,
             'guarantee_number' => $this->guarantee_number,
             'type' => $this->type,
+            'instrument_type' => $this->instrument_type,
+            'instrument_type_label' => match ($this->instrument_type) {
+                'check' => 'چک ضمانت',
+                'promissory_note' => 'سفته',
+                'bank_guarantee' => 'ضمانت‌نامه بانکی',
+                default => $this->instrument_type,
+            },
+            'instrument_number' => $this->instrument_number,
             'type_label' => match($this->type) {
                 'performance' => 'حسن انجام کار',
                 'advance_payment' => 'پیش‌پرداخت',
