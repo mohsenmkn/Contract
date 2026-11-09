@@ -2,7 +2,7 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { amendmentService } from '@/Services/amendmentService'
+import { amendmentService } from '@/services/amendmentService'
 
 export const useAmendmentStore = defineStore('amendment', () => {
     // State

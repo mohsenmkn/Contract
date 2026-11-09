@@ -2,7 +2,7 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { alertService } from '@/Services/alertService'
+import { alertService } from '@/services/alertService'
 
 export const useAlertStore = defineStore('alert', () => {
     // State

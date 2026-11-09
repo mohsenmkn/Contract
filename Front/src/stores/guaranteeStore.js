@@ -2,7 +2,7 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { guaranteeService } from '@/Services/guaranteeService'
+import { guaranteeService } from '@/services/guaranteeService'
 
 export const useGuaranteeStore = defineStore('guarantee', () => {
     // State

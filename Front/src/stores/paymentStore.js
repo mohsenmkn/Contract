@@ -2,7 +2,7 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { paymentService } from '@/Services/paymentService'
+import { paymentService } from '@/services/paymentService'
 
 export const usePaymentStore = defineStore('payment', () => {
     // State

@@ -2,7 +2,7 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { partyService } from '@/Services/partyService'
+import { partyService } from '@/services/partyService'
 
 export const usePartyStore = defineStore('party', () => {
     // State
